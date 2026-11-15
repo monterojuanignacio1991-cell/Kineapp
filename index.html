@@ -45,7 +45,7 @@
 
         <!-- 2. SECCIÓN NUEVA EVALUACIÓN Y TURNO -->
         <section id="seccion-evaluacion" class="hidden space-y-4">
-            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Cargar Turno e Inicio de Ficha</h2>
+            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Cargar Turno y Paquete</h2>
             <form id="form-turno" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-3 border dark:border-gray-700">
                 
                 <div>
@@ -74,12 +74,18 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Estado del Paciente</label>
-                    <select id="estado-tipo" onchange="toggleDiasAsistencia()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                        <option value="turno">Asignar a Agenda Semanal</option>
-                        <option value="espera">Dejar en Lista de Espera</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Total Sesiones (Bono)</label>
+                        <input type="number" id="total-sesiones" value="10" min="1" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Estado</label>
+                        <select id="estado-tipo" onchange="toggleDiasAsistencia()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                            <option value="turno">Agenda Semanal</option>
+                            <option value="espera">Lista de Espera</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div id="contenedor-dias" class="space-y-1">
@@ -146,8 +152,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nota de Evolución Inicial</label>
-                    <textarea id="notas" rows="2" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Observaciones clínicas de la primera evaluación..."></textarea>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nota Inicial</label>
+                    <textarea id="notas" rows="2" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Observaciones clínicas iniciales..."></textarea>
                 </div>
 
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow transition">
@@ -156,9 +162,9 @@
             </form>
         </section>
 
-        <!-- 3. SECCIÓN HISTORIAS CLÍNICAS EXCLUSIVA -->
+        <!-- 3. SECCIÓN HISTORIAS CLÍNICAS CON PLANTILLAS RÁPIDAS -->
         <section id="seccion-historia" class="hidden space-y-4">
-            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Historias Clínicas</h2>
+            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Historias Clínicas y Paquetes</h2>
             
             <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-3 border dark:border-gray-700">
                 <div>
@@ -169,9 +175,8 @@
                 </div>
             </div>
 
-            <!-- Contenedor donde se despliega la ficha e historial del paciente seleccionado -->
             <div id="detalle-historia-paciente" class="space-y-3">
-                <p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su ficha y agregar nuevas notas de evolución.</p>
+                <p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su bono de sesiones y registrar notas rápidas.</p>
             </div>
         </section>
 
@@ -361,9 +366,10 @@
             }
         }
 
-        let turnos = JSON.parse(localStorage.getItem('kine_turnos_v14')) || [];
-        let espera = JSON.parse(localStorage.getItem('kine_espera_v14')) || [];
-        let historialClinico = JSON.parse(localStorage.getItem('kine_historial_v14')) || {};
+        let turnos = JSON.parse(localStorage.getItem('kine_turnos_v15')) || [];
+        let espera = JSON.parse(localStorage.getItem('kine_espera_v15')) || [];
+        let historialClinico = JSON.parse(localStorage.getItem('kine_historial_v15')) || {};
+        let paquetesPacientes = JSON.parse(localStorage.getItem('kine_paquetes_v15')) || {};
 
         function actualizarSelectPacientes() {
             const select = document.getElementById('select-paciente-frecuente');
@@ -456,6 +462,10 @@
                         if(estadoActual === 'Cancelado') badgeEstadoColor = 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-300';
 
                         const testsStr = (t.tests && Array.isArray(t.tests)) ? t.tests.join(', ') : 'Ninguno';
+                        
+                        // Paquete / Bono actual
+                        const sesionesHechas = (historialClinico[t.nombre] || []).length;
+                        const totalBono = paquetesPacientes[t.nombre] || 10;
 
                         htmlTurnos += `
                             <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border-l-4 ${t.pagado ? 'border-green-500' : 'border-orange-400'} space-y-2 mt-2 border dark:border-gray-700">
@@ -464,6 +474,7 @@
                                         <div class="flex items-center space-x-1.5 mb-1 flex-wrap gap-y-1">
                                             <span class="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">${t.hora} hs</span>
                                             <span class="text-xs font-bold px-2 py-0.5 rounded border ${badgeColor}">${t.consultorio}</span>
+                                            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">Sesión ${sesionesHechas}/${totalBono}</span>
                                             <select onchange="cambiarEstadoTurno(${t.id}, this.value)" class="text-[11px] font-bold px-2 py-0.5 rounded border ${badgeEstadoColor} outline-none cursor-pointer bg-transparent">
                                                 <option value="Solicitado" ${estadoActual === 'Solicitado' ? 'selected' : ''}>Solicitado</option>
                                                 <option value="Atendido" ${estadoActual === 'Atendido' ? 'selected' : ''}>Atendido</option>
@@ -513,18 +524,29 @@
             });
         }
 
-        // Lógica de Historias Clínicas en su propia pestaña
+        // Funciones para insertar texto rápido con botones en la historia clínica
+        function agregarPlantilla(texto) {
+            const textarea = document.getElementById('nueva-nota-sesion');
+            if(!textarea) return;
+            if(textarea.value) {
+                textarea.value += " + " + texto;
+            } else {
+                textarea.value = texto;
+            }
+        }
+
         function mostrarHistorialPaciente() {
             const nombreSel = document.getElementById('select-historia-paciente').value;
             const container = document.getElementById('detalle-historia-paciente');
             if(!container) return;
 
             if(!nombreSel) {
-                container.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su ficha y agregar nuevas notas de evolución.</p>';
+                container.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su bono y registrar notas rápidas.</p>';
                 return;
             }
 
             const sesiones = historialClinico[nombreSel] || [];
+            const totalBono = paquetesPacientes[nombreSel] || 10;
             
             let htmlSesiones = '';
             if(sesiones.length === 0) {
@@ -538,7 +560,7 @@
                                 <span class="bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded font-bold">EVA: ${s.eva}/10</span>
                             </div>
                             <p class="text-xs text-gray-600 dark:text-gray-300 mt-1"><strong>Zona:</strong> ${s.zona || 'N/A'} (${s.lateralidad || ''})</p>
-                            <p class="text-xs text-gray-700 dark:text-gray-200 mt-1"><strong>Evolución / Qué se hizo:</strong> ${s.nota || 'Sin observaciones'}</p>
+                            <p class="text-xs text-gray-700 dark:text-gray-200 mt-1"><strong>Evolución:</strong> ${s.nota || 'Sin observaciones'}</p>
                         </div>
                     `;
                 });
@@ -548,6 +570,7 @@
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700 space-y-3">
                     <div class="flex justify-between items-center border-b dark:border-gray-700 pb-2">
                         <h3 class="text-base font-bold dark:text-white"><i class="fa-solid fa-user-injured mr-2"></i>${nombreSel}</h3>
+                        <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full font-bold">Bono: ${sesiones.length} / ${totalBono} sesiones</span>
                     </div>
 
                     <div class="space-y-2 pt-2">
@@ -562,12 +585,22 @@
                                 <input type="number" id="nuevo-monto" value="15000" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none">
                             </div>
                         </div>
+
                         <div>
-                            <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5">Observaciones y Tratamiento Realizado</label>
-                            <textarea id="nueva-nota-sesion" rows="2" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. Se trabajó magnetoterapia y estiramientos..."></textarea>
+                            <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">Plantillas Rápidas (Tocá para agregar)</label>
+                            <div class="flex flex-wrap gap-1 mb-2">
+                                <button type="button" onclick="agregarPlantilla('Magnetoterapia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">⚡ Magneto</button>
+                                <button type="button" onclick="agregarPlantilla('Ultrasonido')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">📡 US</button>
+                                <button type="button" onclick="agregarPlantilla('Electroanalgesia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">🔌 Electros</button>
+                                <button type="button" onclick="agregarPlantilla('Terapia manual y masoterapia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">🤲 T. Manual</button>
+                                <button type="button" onclick="agregarPlantilla('Ejercicios de movilidad y fuerza')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">🏋️ Ejercicios</button>
+                                <button type="button" onclick="agregarPlantilla('Crioterapia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">❄️ Crioterapia</button>
+                            </div>
+                            <textarea id="nueva-nota-sesion" rows="2" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Observaciones de la sesión..."></textarea>
                         </div>
+
                         <button onclick="guardarNuevaSesionHistorial('${nombreSel}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded shadow transition">
-                            Guardar Nota en Historia Clínica
+                            Guardar Nota y Avanzar Bono
                         </button>
                     </div>
 
@@ -593,19 +626,16 @@
 
             if(!historialClinico[nombrePaciente]) historialClinico[nombrePaciente] = [];
 
-            const sesionData = {
+            historialClinico[nombrePaciente].push({
                 fecha: new Date().toLocaleDateString('es-ES'),
                 eva,
                 nota,
                 monto
-            };
+            });
+            localStorage.setItem('kine_historial_v15', JSON.stringify(historialClinico));
 
-            historialClinico[nombrePaciente].push(sesionData);
-            localStorage.setItem('kine_historial_v14', JSON.stringify(historialClinico));
-
-            // Registrar también como ingreso en turnos pagados para la caja
             const turnoRef = turnos.find(t => t.nombre === nombrePaciente);
-            const nuevoTurnoCobro = {
+            turnos.push({
                 id: Date.now() + Math.random(),
                 nombre: nombrePaciente,
                 consultorio: turnoRef ? turnoRef.consultorio : 'Caroyita',
@@ -623,17 +653,16 @@
                 monto,
                 pagado: true,
                 estado: 'Atendido'
-            };
-            turnos.push(nuevoTurnoCobro);
-            localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+            });
+            localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
 
-            alert("¡Nota guardada en la historia clínica y registrada en caja con éxito!");
+            alert("¡Sesión guardada con éxito!");
             mostrarHistorialPaciente();
         }
 
         function cambiarEstadoTurno(id, nuevoEstado) {
             turnos = turnos.map(t => t.id === id ? {...t, estado: nuevoEstado} : t);
-            localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+            localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
             renderAgenda();
         }
 
@@ -655,14 +684,14 @@
 
         function togglePago(id) {
             turnos = turnos.map(t => t.id === id ? {...t, pagado: !t.pagado} : t);
-            localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+            localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
             renderAgenda();
         }
 
         function eliminarTurno(id) {
             if(confirm("¿Eliminar este turno?")) {
                 turnos = turnos.filter(t => t.id !== id);
-                localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+                localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
                 renderAgenda();
             }
         }
@@ -683,6 +712,10 @@
                 const eva = parseInt(document.getElementById('eva').value);
                 const notas = document.getElementById('notas').value;
                 const estadoTipo = document.getElementById('estado-tipo').value;
+                const totalSesiones = parseInt(document.getElementById('total-sesiones').value) || 10;
+
+                paquetesPacientes[nombre] = totalSesiones;
+                localStorage.setItem('kine_paquetes_v15', JSON.stringify(paquetesPacientes));
 
                 const testsTildados = [];
                 document.querySelectorAll('input[name="tests"]:checked').forEach(chk => testsTildados.push(chk.value));
@@ -692,15 +725,11 @@
                     fecha: new Date().toLocaleDateString('es-ES'),
                     zona, lateralidad, eva, nota: notas, tests: testsTildados, monto
                 });
-                localStorage.setItem('kine_historial_v14', JSON.stringify(historialClinico));
+                localStorage.setItem('kine_historial_v15', JSON.stringify(historialClinico));
 
                 if(estadoTipo === 'espera') {
-                    const nuevoEspera = {
-                        id: Date.now(),
-                        nombre, consultorio, telefono, obraSocial, monto, zona, lateralidad, tests: testsTildados, eva, notas
-                    };
-                    espera.push(nuevoEspera);
-                    localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+                    espera.push({ id: Date.now(), nombre, consultorio, telefono, obraSocial, monto, zona, lateralidad, tests: testsTildados, eva, notas });
+                    localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
                     alert("Paciente guardado en Lista de Espera.");
                     this.reset();
                     cambiarTab('espera');
@@ -712,7 +741,7 @@
                     }
 
                     checkboxesDias.forEach(chk => {
-                        const nuevoTurno = {
+                        turnos.push({
                             id: Date.now() + Math.random(),
                             nombre, consultorio,
                             dia: chk.value,
@@ -721,11 +750,10 @@
                             hora, telefono, obraSocial, zona, lateralidad, tests: testsTildados, eva, notas, monto, 
                             pagado: true,
                             estado: 'Solicitado'
-                        };
-                        turnos.push(nuevoTurno);
+                        });
                     });
 
-                    localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+                    localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
                     this.reset();
                     const valEvaEl = document.getElementById('val-eva');
                     if(valEvaEl) valEvaEl.innerText = "5";
@@ -778,7 +806,7 @@
 
         function eliminarEspera(id) {
             espera = espera.filter(e => e.id !== id);
-            localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+            localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
             renderEspera();
         }
 
@@ -796,10 +824,10 @@
             toggleDiasAsistencia();
             
             espera = espera.filter(e => e.id !== id);
-            localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+            localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
             
             cambiarTab('evaluacion');
-            alert("Datos cargados. Selecciona los días de la semana y guarda para asignarlo a la agenda.");
+            alert("Datos cargados. Selecciona los días de la semana y guarda.");
         }
 
         function renderCaja() {
@@ -844,7 +872,7 @@
         }
 
         function exportarBackup() {
-            const data = { turnos, espera, historialClinico };
+            const data = { turnos, espera, historialClinico, paquetesPacientes };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -864,9 +892,11 @@
                         turnos = data.turnos;
                         espera = data.espera;
                         historialClinico = data.historialClinico || {};
-                        localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
-                        localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
-                        localStorage.setItem('kine_historial_v14', JSON.stringify(historialClinico));
+                        paquetesPacientes = data.paquetesPacientes || {};
+                        localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
+                        localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
+                        localStorage.setItem('kine_historial_v15', JSON.stringify(historialClinico));
+                        localStorage.setItem('kine_paquetes_v15', JSON.stringify(paquetesPacientes));
                         alert("¡Datos importados con éxito!");
                         renderAgenda();
                     } else {
