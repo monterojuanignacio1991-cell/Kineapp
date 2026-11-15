@@ -101,8 +101,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Celular (para WhatsApp)</label>
-                    <input type="tel" id="telefono" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. 5493512345678">
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Celular (WhatsApp)</label>
+                    <input type="tel" id="telefono" value="549" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="5493512345678">
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
@@ -366,10 +366,10 @@
             }
         }
 
-        let turnos = JSON.parse(localStorage.getItem('kine_turnos_v15')) || [];
-        let espera = JSON.parse(localStorage.getItem('kine_espera_v15')) || [];
-        let historialClinico = JSON.parse(localStorage.getItem('kine_historial_v15')) || {};
-        let paquetesPacientes = JSON.parse(localStorage.getItem('kine_paquetes_v15')) || {};
+        let turnos = JSON.parse(localStorage.getItem('kine_turnos_v16')) || [];
+        let espera = JSON.parse(localStorage.getItem('kine_espera_v16')) || [];
+        let historialClinico = JSON.parse(localStorage.getItem('kine_historial_v16')) || {};
+        let paquetesPacientes = JSON.parse(localStorage.getItem('kine_paquetes_v16')) || {};
 
         function actualizarSelectPacientes() {
             const select = document.getElementById('select-paciente-frecuente');
@@ -409,6 +409,9 @@
                 document.getElementById('obra-social').value = paciente.obraSocial;
                 document.getElementById('consultorio').value = paciente.consultorio;
                 document.getElementById('zona').value = paciente.zona;
+                if(paquetesPacientes[nombreSel]) {
+                    document.getElementById('total-sesiones').value = paquetesPacientes[nombreSel];
+                }
                 actualizarTests();
             }
         }
@@ -463,7 +466,7 @@
 
                         const testsStr = (t.tests && Array.isArray(t.tests)) ? t.tests.join(', ') : 'Ninguno';
                         
-                        // Paquete / Bono actual
+                        // Contador real basado en historial clínico
                         const sesionesHechas = (historialClinico[t.nombre] || []).length;
                         const totalBono = paquetesPacientes[t.nombre] || 10;
 
@@ -524,7 +527,6 @@
             });
         }
 
-        // Funciones para insertar texto rápido con botones en la historia clínica
         function agregarPlantilla(texto) {
             const textarea = document.getElementById('nueva-nota-sesion');
             if(!textarea) return;
@@ -618,298 +620,3 @@
             const eva = parseInt(document.getElementById('nuevo-eva').value) || 0;
             const monto = parseFloat(document.getElementById('nuevo-monto').value) || 0;
             const nota = document.getElementById('nueva-nota-sesion').value.trim();
-
-            if(!nota) {
-                alert("Por favor, escribí alguna observación de la sesión.");
-                return;
-            }
-
-            if(!historialClinico[nombrePaciente]) historialClinico[nombrePaciente] = [];
-
-            historialClinico[nombrePaciente].push({
-                fecha: new Date().toLocaleDateString('es-ES'),
-                eva,
-                nota,
-                monto
-            });
-            localStorage.setItem('kine_historial_v15', JSON.stringify(historialClinico));
-
-            const turnoRef = turnos.find(t => t.nombre === nombrePaciente);
-            turnos.push({
-                id: Date.now() + Math.random(),
-                nombre: nombrePaciente,
-                consultorio: turnoRef ? turnoRef.consultorio : 'Caroyita',
-                dia: 'Sesión Clínica',
-                semanaOffset: offsetSemana,
-                fechaCreacion: new Date().toISOString(),
-                hora: '00:00',
-                telefono: turnoRef ? turnoRef.telefono : '',
-                obraSocial: turnoRef ? turnoRef.obraSocial : 'Particular',
-                zona: turnoRef ? turnoRef.zona : 'General',
-                lateralidad: '',
-                tests: [],
-                eva,
-                notas: nota,
-                monto,
-                pagado: true,
-                estado: 'Atendido'
-            });
-            localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
-
-            alert("¡Sesión guardada con éxito!");
-            mostrarHistorialPaciente();
-        }
-
-        function cambiarEstadoTurno(id, nuevoEstado) {
-            turnos = turnos.map(t => t.id === id ? {...t, estado: nuevoEstado} : t);
-            localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
-            renderAgenda();
-        }
-
-        function enviarRecordatorioTurno(id) {
-            const turnoSeleccionado = turnos.find(t => t.id === id);
-            if(!turnoSeleccionado) return;
-
-            const turnosPacienteSemana = turnos.filter(t => 
-                t.telefono === turnoSeleccionado.telefono && 
-                t.semanaOffset === offsetSemana && 
-                t.estado !== 'Cancelado'
-            );
-
-            let detalleTurnos = turnosPacienteSemana.map(t => `${t.dia} a las ${t.hora} hs`).join(', ');
-
-            const msg = `Hola ${turnoSeleccionado.nombre}, te recordamos tus turnos de kinesiología para esta semana: ${detalleTurnos}. ¡Te esperamos!`;
-            window.open(`https://wa.me/${turnoSeleccionado.telefono}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function togglePago(id) {
-            turnos = turnos.map(t => t.id === id ? {...t, pagado: !t.pagado} : t);
-            localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
-            renderAgenda();
-        }
-
-        function eliminarTurno(id) {
-            if(confirm("¿Eliminar este turno?")) {
-                turnos = turnos.filter(t => t.id !== id);
-                localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
-                renderAgenda();
-            }
-        }
-
-        const formTurno = document.getElementById('form-turno');
-        if(formTurno) {
-            formTurno.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const nombre = document.getElementById('nombre').value.trim();
-                const consultorio = document.getElementById('consultorio').value;
-                const hora = document.getElementById('hora').value;
-                const telefono = document.getElementById('telefono').value;
-                const obraSocial = document.getElementById('obra-social').value || "Particular";
-                const monto = parseFloat(document.getElementById('monto').value) || 0;
-                const zona = document.getElementById('zona').value;
-                const lateralidad = document.getElementById('lateralidad').value;
-                const eva = parseInt(document.getElementById('eva').value);
-                const notas = document.getElementById('notas').value;
-                const estadoTipo = document.getElementById('estado-tipo').value;
-                const totalSesiones = parseInt(document.getElementById('total-sesiones').value) || 10;
-
-                paquetesPacientes[nombre] = totalSesiones;
-                localStorage.setItem('kine_paquetes_v15', JSON.stringify(paquetesPacientes));
-
-                const testsTildados = [];
-                document.querySelectorAll('input[name="tests"]:checked').forEach(chk => testsTildados.push(chk.value));
-
-                if(!historialClinico[nombre]) historialClinico[nombre] = [];
-                historialClinico[nombre].push({
-                    fecha: new Date().toLocaleDateString('es-ES'),
-                    zona, lateralidad, eva, nota: notas, tests: testsTildados, monto
-                });
-                localStorage.setItem('kine_historial_v15', JSON.stringify(historialClinico));
-
-                if(estadoTipo === 'espera') {
-                    espera.push({ id: Date.now(), nombre, consultorio, telefono, obraSocial, monto, zona, lateralidad, tests: testsTildados, eva, notas });
-                    localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
-                    alert("Paciente guardado en Lista de Espera.");
-                    this.reset();
-                    cambiarTab('espera');
-                } else {
-                    const checkboxesDias = document.querySelectorAll('input[name="dias"]:checked');
-                    if (checkboxesDias.length === 0) {
-                        alert("Selecciona al menos un día para el turno.");
-                        return;
-                    }
-
-                    checkboxesDias.forEach(chk => {
-                        turnos.push({
-                            id: Date.now() + Math.random(),
-                            nombre, consultorio,
-                            dia: chk.value,
-                            semanaOffset: offsetSemana,
-                            fechaCreacion: new Date().toISOString(),
-                            hora, telefono, obraSocial, zona, lateralidad, tests: testsTildados, eva, notas, monto, 
-                            pagado: true,
-                            estado: 'Solicitado'
-                        });
-                    });
-
-                    localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
-                    this.reset();
-                    const valEvaEl = document.getElementById('val-eva');
-                    if(valEvaEl) valEvaEl.innerText = "5";
-                    actualizarTests();
-                    cambiarTab('agenda');
-                }
-            });
-        }
-
-        function renderEspera() {
-            const container = document.getElementById('lista-espera-container');
-            if(!container) return;
-            container.innerHTML = '';
-
-            if(espera.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-400 py-6">No hay pacientes en lista de espera.</p>';
-                return;
-            }
-
-            espera.forEach(e => {
-                const esCaroyita = e.consultorio === 'Caroyita';
-                const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-emerald-300' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border-blue-300';
-                const testsStr = (e.tests && Array.isArray(e.tests)) ? e.tests.join(', ') : 'Ninguno';
-
-                container.innerHTML += `
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-xs font-bold px-2 py-0.5 rounded border ${badgeColor}">${e.consultorio}</span>
-                                <h3 class="text-base font-bold mt-1 dark:text-white">${e.nombre}</h3>
-                            </div>
-                            <span class="font-bold text-gray-700 dark:text-gray-200">$${e.monto}</span>
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded space-y-1">
-                            <p><strong>Tel:</strong> ${e.telefono} | <strong>OS:</strong> ${e.obraSocial}</p>
-                            <p><strong>Zona:</strong> ${e.zona} (${e.lateralidad}) - <strong>EVA:</strong> ${e.eva}/10</p>
-                            <p><strong>Tests:</strong> ${testsStr}</p>
-                            ${e.notas ? `<p class="italic"><strong>Notas:</strong> ${e.notas}</p>` : ''}
-                        </div>
-                        <div class="flex justify-end space-x-2 pt-1">
-                            <button onclick="darTurnoDesdeEspera(${e.id})" class="bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded shadow">
-                                Dar Turno (Pasar a Agenda)
-                            </button>
-                            <button onclick="eliminarEspera(${e.id})" class="text-red-500 text-xs px-2"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function eliminarEspera(id) {
-            espera = espera.filter(e => e.id !== id);
-            localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
-            renderEspera();
-        }
-
-        function darTurnoDesdeEspera(id) {
-            const paciente = espera.find(e => e.id === id);
-            if(!paciente) return;
-
-            document.getElementById('nombre').value = paciente.nombre;
-            document.getElementById('telefono').value = paciente.telefono;
-            document.getElementById('obra-social').value = paciente.obraSocial;
-            document.getElementById('consultorio').value = paciente.consultorio;
-            document.getElementById('zona').value = paciente.zona;
-            document.getElementById('monto').value = paciente.monto;
-            document.getElementById('estado-tipo').value = 'turno';
-            toggleDiasAsistencia();
-            
-            espera = espera.filter(e => e.id !== id);
-            localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
-            
-            cambiarTab('evaluacion');
-            alert("Datos cargados. Selecciona los días de la semana y guarda.");
-        }
-
-        function renderCaja() {
-            const container = document.getElementById('lista-caja');
-            if(!container) return;
-            container.innerHTML = '';
-            let total = 0;
-
-            const mesFiltroInput = document.getElementById('filtro-mes');
-            const mesFiltro = mesFiltroInput ? mesFiltroInput.value : anioActual + '-' + mesActualStr;
-
-            const cobrados = turnos.filter(t => {
-                if(!t.pagado || t.estado === 'Cancelado') return false;
-                const fechaStr = t.fechaCreacion ? t.fechaCreacion.substring(0, 7) : mesFiltro;
-                return fechaStr === mesFiltro;
-            });
-
-            if(cobrados.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-400 py-4">No hay ingresos registrados en este mes.</p>';
-            }
-
-            cobrados.forEach(t => {
-                total += t.monto;
-                const esCaroyita = t.consultorio === 'Caroyita';
-                const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
-
-                container.innerHTML += `
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700 last:border-0">
-                        <div>
-                            <p class="font-semibold dark:text-white">${t.nombre} <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeColor}">${t.consultorio}</span></p>
-                            <p class="text-xs text-gray-400">${t.dia} - ${t.zona} (${t.obraSocial})</p>
-                        </div>
-                        <span class="font-bold text-green-600 dark:text-green-400">+$${t.monto}</span>
-                    </div>
-                `;
-            });
-
-            const totalCajaEl = document.getElementById('total-caja');
-            if(totalCajaEl) {
-                totalCajaEl.innerText = `$${total.toLocaleString()}`;
-            }
-        }
-
-        function exportarBackup() {
-            const data = { turnos, espera, historialClinico, paquetesPacientes };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `kineapp_backup_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-        }
-
-        function importarBackup(event) {
-            const archivo = event.target.files[0];
-            if(!archivo) return;
-            const lector = new FileReader();
-            lector.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(data.turnos && data.espera) {
-                        turnos = data.turnos;
-                        espera = data.espera;
-                        historialClinico = data.historialClinico || {};
-                        paquetesPacientes = data.paquetesPacientes || {};
-                        localStorage.setItem('kine_turnos_v15', JSON.stringify(turnos));
-                        localStorage.setItem('kine_espera_v15', JSON.stringify(espera));
-                        localStorage.setItem('kine_historial_v15', JSON.stringify(historialClinico));
-                        localStorage.setItem('kine_paquetes_v15', JSON.stringify(paquetesPacientes));
-                        alert("¡Datos importados con éxito!");
-                        renderAgenda();
-                    } else {
-                        alert("El archivo no tiene el formato correcto.");
-                    }
-                } catch(err) {
-                    alert("Error al leer el archivo JSON.");
-                }
-            };
-            lector.readAsText(archivo);
-        }
-
-        renderAgenda();
-    </script>
-</body>
-</html>
