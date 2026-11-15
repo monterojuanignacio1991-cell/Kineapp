@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KineApp Consultorio Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 pb-20 transition-colors duration-200">
+
+    <!-- ENCABEZADO -->
+    <header class="bg-blue-600 dark:bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <h1 class="text-xl font-bold"><i class="fa-solid fa-heart-pulse mr-2"></i>KineApp Pro</h1>
+        <div class="flex items-center space-x-2">
+            <span id="fecha-actual" class="text-xs bg-blue-700 dark:bg-blue-800 px-2 py-1 rounded-full"></span>
+            <button onclick="toggleDarkMode()" class="bg-blue-700 dark:bg-blue-800 p-1.5 rounded-full text-sm">
+                <i id="icono-modo" class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR DE SECCIONES -->
+    <main class="p-4 max-w-md mx-auto">
+
+        <!-- 1. SECCIÓN AGENDA -->
+        <section id="seccion-agenda" class="space-y-4">
+            <div class="flex justify-between items-center bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border dark:border-gray-700">
+                <button onclick="cambiarSemana(-1)" class="text-blue-600 dark:text-blue-400 font-bold px-2 py-1"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="text-center">
+                    <h2 id="titulo-semana" class="text-sm font-bold text-gray-700 dark:text-gray-200">Semana</h2>
+                    <button onclick="irSemanaActual()" class="text-xs text-blue-500 dark:text-blue-400 underline">Semana Actual</button>
+                </div>
+                <button onclick="cambiarSemana(1)" class="text-blue-600 dark:text-blue-400 font-bold px-2 py-1"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            
+            <div id="lista-turnos" class="space-y-4"></div>
+        </section>
+
+        <!-- 2. SECCIÓN NUEVA EVALUACIÓN Y TURNO -->
+        <section id="seccion-evaluacion" class="hidden space-y-4">
+            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Cargar Turno e Inicio de Ficha</h2>
+            <form id="form-turno" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-3 border dark:border-gray-700">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Paciente Recurrente (Opcional)</label>
+                    <select id="select-paciente-frecuente" onchange="cargarDatosPaciente()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
+                        <option value="">-- Nuevo Paciente --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nombre y Apellido</label>
+                    <input type="text" id="nombre" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. Juan Pérez">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Consultorio</label>
+                        <select id="consultorio" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                            <option value="Caroyita">Caroyita</option>
+                            <option value="Axis">Axis</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Hora</label>
+                        <input type="time" id="hora" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Estado del Paciente</label>
+                    <select id="estado-tipo" onchange="toggleDiasAsistencia()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                        <option value="turno">Asignar a Agenda Semanal</option>
+                        <option value="espera">Dejar en Lista de Espera</option>
+                    </select>
+                </div>
+
+                <div id="contenedor-dias" class="space-y-1">
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Días de asistencia</label>
+                    <div class="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border dark:border-gray-600 text-xs">
+                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Lunes" class="accent-blue-600"> <span>Lunes</span></label>
+                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Martes" class="accent-blue-600"> <span>Martes</span></label>
+                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Miércoles" class="accent-blue-600"> <span>Miércoles</span></label>
+                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Jueves" class="accent-blue-600"> <span>Jueves</span></label>
+                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Viernes" class="accent-blue-600"> <span>Viernes</span></label>
+                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Sábado" class="accent-blue-600"> <span>Sábado</span></label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Celular (para WhatsApp)</label>
+                    <input type="tel" id="telefono" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. 5493512345678">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Obra Social</label>
+                        <input type="text" id="obra-social" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. OSDE">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Coseguro ($)</label>
+                        <input type="number" id="monto" value="15000" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Zona Anatómica</label>
+                        <select id="zona" onchange="actualizarTests()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                            <option value="Cervicales">Cervicales</option>
+                            <option value="Dorsales">Dorsales</option>
+                            <option value="Lumbares">Lumbares</option>
+                            <option value="Cadera">Cadera</option>
+                            <option value="Rodilla">Rodilla</option>
+                            <option value="Tobillo / Pie">Tobillo / Pie</option>
+                            <option value="Hombro">Hombro</option>
+                            <option value="Codo">Codo</option>
+                            <option value="Muñeca / Mano">Muñeca / Mano</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Lateralidad</label>
+                        <select id="lateralidad" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                            <option value="Bilateral / N/A">Bilateral / N/A</option>
+                            <option value="Derecha">Derecha</option>
+                            <option value="Izquierda">Izquierda</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Tests Positivos</label>
+                    <div id="contenedor-tests" class="grid grid-cols-2 gap-1.5 bg-gray-50 dark:bg-gray-700 p-2.5 rounded-lg border dark:border-gray-600 text-xs"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Escala de Dolor (EVA): <span id="val-eva" class="font-bold text-blue-600 dark:text-blue-400">5</span>/10</label>
+                    <input type="range" id="eva" min="0" max="10" value="5" class="w-full accent-blue-600" oninput="document.getElementById('val-eva').innerText = this.value">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nota de Evolución Inicial</label>
+                    <textarea id="notas" rows="2" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Observaciones clínicas de la primera evaluación..."></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow transition">
+                    Guardar Registro
+                </button>
+            </form>
+        </section>
+
+        <!-- 3. SECCIÓN HISTORIAS CLÍNICAS EXCLUSIVA -->
+        <section id="seccion-historia" class="hidden space-y-4">
+            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Historias Clínicas</h2>
+            
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-3 border dark:border-gray-700">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Seleccionar Paciente</label>
+                    <select id="select-historia-paciente" onchange="mostrarHistorialPaciente()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
+                        <option value="">-- Seleccionar Paciente --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Contenedor donde se despliega la ficha e historial del paciente seleccionado -->
+            <div id="detalle-historia-paciente" class="space-y-3">
+                <p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su ficha y agregar nuevas notas de evolución.</p>
+            </div>
+        </section>
+
+        <!-- 4. SECCIÓN LISTA DE ESPERA -->
+        <section id="seccion-espera" class="hidden space-y-4">
+            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Lista de Espera</h2>
+            <div id="lista-espera-container" class="space-y-3"></div>
+        </section>
+
+        <!-- 5. SECCIÓN CAJA Y BACKUP -->
+        <section id="seccion-caja" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Caja y Ajustes</h2>
+                <input type="month" id="filtro-mes" onchange="renderCaja()" class="border dark:border-gray-600 rounded-lg p-1 text-xs bg-white dark:bg-gray-700 dark:text-white shadow-sm">
+            </div>
+            
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg text-center">
+                <p class="text-xs uppercase tracking-wider opacity-90">Ingresos Totales del Mes</p>
+                <p id="total-caja" class="text-3xl font-extrabold mt-1">$0</p>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 border dark:border-gray-700">
+                <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 border-b dark:border-gray-700 pb-2">Herramientas Pro</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportarBackup()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow flex items-center justify-center">
+                        <i class="fa-solid fa-download mr-1.5"></i> Exportar Datos
+                    </button>
+                    <label class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow flex items-center justify-center cursor-pointer">
+                        <i class="fa-solid fa-upload mr-1.5"></i> Importar Datos
+                        <input type="file" id="input-backup" onchange="importarBackup(event)" class="hidden" accept=".json">
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 border dark:border-gray-700">
+                <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 border-b dark:border-gray-700 pb-2">Detalle de Cobros Mensuales</h3>
+                <div id="lista-caja" class="space-y-2 text-sm"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MENÚ DE NAVEGACIÓN INFERIOR -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 flex justify-around py-2.5 shadow-lg z-50 max-w-md mx-auto">
+        <button onclick="cambiarTab('agenda')" id="btn-agenda" class="flex flex-col items-center text-blue-600 dark:text-blue-400">
+            <i class="fa-solid fa-calendar-week text-base"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Agenda</span>
+        </button>
+        <button onclick="cambiarTab('evaluacion')" id="btn-evaluacion" class="flex flex-col items-center text-gray-400">
+            <i class="fa-solid fa-notes-medical text-base"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Cargar</span>
+        </button>
+        <button onclick="cambiarTab('historia')" id="btn-historia" class="flex flex-col items-center text-gray-400">
+            <i class="fa-solid fa-book-medical text-base"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Historia</span>
+        </button>
+        <button onclick="cambiarTab('espera')" id="btn-espera" class="flex flex-col items-center text-gray-400">
+            <i class="fa-solid fa-clock text-base"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Espera</span>
+        </button>
+        <button onclick="cambiarTab('caja')" id="btn-caja" class="flex flex-col items-center text-gray-400">
+            <i class="fa-solid fa-wallet text-base"></i>
+            <span class="text-[10px] mt-0.5 font-medium">Caja</span>
+        </button>
+    </nav>
+
+    <!-- SCRIPT DE LÓGICA -->
+    <script>
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('kine_theme', 'light');
+                document.getElementById('icono-modo').className = "fa-solid fa-moon";
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('kine_theme', 'dark');
+                document.getElementById('icono-modo').className = "fa-solid fa-sun";
+            }
+        }
+
+        if (localStorage.getItem('kine_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+            const iconoModo = document.getElementById('icono-modo');
+            if(iconoModo) iconoModo.className = "fa-solid fa-sun";
+        }
+
+        const fechaActualObj = new Date();
+        const fechaActualEl = document.getElementById('fecha-actual');
+        if(fechaActualEl) fechaActualEl.innerText = fechaActualObj.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+        
+        const anioActual = fechaActualObj.getFullYear();
+        const mesActualStr = String(fechaActualObj.getMonth() + 1).padStart(2, '0');
+        const filtroMesEl = document.getElementById('filtro-mes');
+        if(filtroMesEl) filtroMesEl.value = `${anioActual}-${mesActualStr}`;
+
+        let offsetSemana = 0;
+
+        function obtenerLunesDeSemana(offset) {
+            const d = new Date();
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+            return new Date(d.setDate(diff));
+        }
+
+        function obtenerFechasSemana(offset) {
+            const lunes = obtenerLunesDeSemana(offset);
+            let fechas = {};
+            const nombresDias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            
+            nombresDias.forEach((dia, index) => {
+                const tempDate = new Date(lunes);
+                tempDate.setDate(lunes.getDate() + index);
+                fechas[dia] = tempDate.toISOString().split('T')[0];
+            });
+            return { lunes, fechas };
+        }
+
+        function actualizarTituloSemana() {
+            const { lunes } = obtenerFechasSemana(offsetSemana);
+            const domingo = new Date(lunes);
+            domingo.setDate(lunes.getDate() + 5);
+            
+            const opciones = { day: 'numeric', month: 'short' };
+            const tituloSemanaEl = document.getElementById('titulo-semana');
+            if(tituloSemanaEl) {
+                tituloSemanaEl.innerText = `Semana: ${lunes.toLocaleDateString('es-ES', opciones)} al ${domingo.toLocaleDateString('es-ES', opciones)}`;
+            }
+        }
+
+        function cambiarSemana(dir) {
+            offsetSemana += dir;
+            actualizarTituloSemana();
+            renderAgenda();
+        }
+
+        function irSemanaActual() {
+            offsetSemana = 0;
+            actualizarTituloSemana();
+            renderAgenda();
+        }
+
+        actualizarTituloSemana();
+
+        const testsPorZona = {
+            "Cervicales": ["Spurling (+)", "Distracción (+)", "Valsalva (+)", "ROM alterado"],
+            "Dorsales": ["Rotación limitada", "Palpación costovertebral", "Rigidez extensión"],
+            "Lumbares": ["Schober (+)", "Lasegue (+)", "Bragard (+)", "Slump Test (+)"],
+            "Cadera": ["Faber / Patrick (+)", "FADIR (+)", "Rotación interna limitada"],
+            "Rodilla": ["Cajón Ant/Post (+)", "Lachman (+)", "Bostezo med/lat (+)", "McMurray (+)"],
+            "Tobillo / Pie": ["Cajón anterior (+)", "Inversión forzada (+)", "Squeeze test (+)"],
+            "Hombro": ["Neer (+)", "Hawkins-Kennedy (+)", "Jobe (+)", "Apprehension (+)"],
+            "Codo": ["Cozen Test (+)", "Test de Golfista (+)", "Bostezo articular"],
+            "Muñeca / Mano": ["Phalen (+)", "Tinel (+)", "Finkelstein (+)"]
+        };
+
+        function actualizarTests() {
+            const zonaEl = document.getElementById('zona');
+            if(!zonaEl) return;
+            const zona = zonaEl.value;
+            const contenedor = document.getElementById('contenedor-tests');
+            if(!contenedor) return;
+            contenedor.innerHTML = '';
+            
+            if (testsPorZona[zona]) {
+                testsPorZona[zona].forEach(test => {
+                    contenedor.innerHTML += `
+                        <label class="flex items-center space-x-1">
+                            <input type="checkbox" name="tests" value="${test}" class="accent-blue-600">
+                            <span>${test}</span>
+                        </label>
+                    `;
+                });
+            }
+        }
+        actualizarTests();
+
+        function toggleDiasAsistencia() {
+            const estadoEl = document.getElementById('estado-tipo');
+            if(!estadoEl) return;
+            const estado = estadoEl.value;
+            const contenedorDias = document.getElementById('contenedor-dias');
+            if(!contenedorDias) return;
+            if(estado === 'espera') {
+                contenedorDias.classList.add('hidden');
+            } else {
+                contenedorDias.classList.remove('hidden');
+            }
+        }
+
+        let turnos = JSON.parse(localStorage.getItem('kine_turnos_v14')) || [];
+        let espera = JSON.parse(localStorage.getItem('kine_espera_v14')) || [];
+        let historialClinico = JSON.parse(localStorage.getItem('kine_historial_v14')) || {};
+
+        function actualizarSelectPacientes() {
+            const select = document.getElementById('select-paciente-frecuente');
+            const selectHistoria = document.getElementById('select-historia-paciente');
+            
+            const nombresSet = new Set();
+            turnos.forEach(t => nombresSet.add(t.nombre));
+            espera.forEach(e => nombresSet.add(e.nombre));
+            Object.keys(historialClinico).forEach(h => nombresSet.add(h));
+
+            if(select) {
+                select.innerHTML = '<option value="">-- Nuevo Paciente --</option>';
+                nombresSet.forEach(nombre => {
+                    select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
+                });
+            }
+
+            if(selectHistoria) {
+                const actual = selectHistoria.value;
+                selectHistoria.innerHTML = '<option value="">-- Seleccionar Paciente --</option>';
+                nombresSet.forEach(nombre => {
+                    selectHistoria.innerHTML += `<option value="${nombre}" ${nombre === actual ? 'selected' : ''}>${nombre}</option>`;
+                });
+            }
+        }
+
+        function cargarDatosPaciente() {
+            const selectPaciente = document.getElementById('select-paciente-frecuente');
+            if(!selectPaciente) return;
+            const nombreSel = selectPaciente.value;
+            if(!nombreSel) return;
+            
+            const paciente = turnos.find(t => t.nombre === nombreSel) || espera.find(e => e.nombre === nombreSel);
+            if(paciente) {
+                document.getElementById('nombre').value = paciente.nombre;
+                document.getElementById('telefono').value = paciente.telefono;
+                document.getElementById('obra-social').value = paciente.obraSocial;
+                document.getElementById('consultorio').value = paciente.consultorio;
+                document.getElementById('zona').value = paciente.zona;
+                actualizarTests();
+            }
+        }
+
+        function cambiarTab(tab) {
+            ['seccion-agenda', 'seccion-evaluacion', 'seccion-historia', 'seccion-espera', 'seccion-caja'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+
+            ['btn-agenda', 'btn-evaluacion', 'btn-historia', 'btn-espera', 'btn-caja'].forEach(id => {
+                const btn = document.getElementById(id);
+                if(btn) btn.className = "flex flex-col items-center text-gray-400 dark:text-gray-500";
+            });
+
+            const targetSec = document.getElementById(`seccion-${tab}`);
+            const targetBtn = document.getElementById(`btn-${tab}`);
+            if(targetSec) targetSec.classList.remove('hidden');
+            if(targetBtn) targetBtn.className = "flex flex-col items-center text-blue-600 dark:text-blue-400";
+
+            if(tab === 'agenda') renderAgenda();
+            if(tab === 'historia') actualizarSelectPacientes();
+            if(tab === 'espera') renderEspera();
+            if(tab === 'caja') renderCaja();
+            if(tab === 'evaluacion') actualizarSelectPacientes();
+        }
+
+        function renderAgenda() {
+            const container = document.getElementById('lista-turnos');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            const { fechas } = obtenerFechasSemana(offsetSemana);
+            const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+            dias.forEach(dia => {
+                const fechaExactaStr = fechas[dia];
+                const turnosDia = turnos.filter(t => t.dia === dia && t.semanaOffset === offsetSemana);
+                
+                let htmlTurnos = '';
+                if(turnosDia.length === 0) {
+                    htmlTurnos = '<p class="text-xs text-gray-400 italic py-1">Sin turnos</p>';
+                } else {
+                    turnosDia.forEach(t => {
+                        const esCaroyita = t.consultorio === 'Caroyita';
+                        const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-emerald-300' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border-blue-300';
+                        const estadoActual = t.estado || 'Solicitado';
+                        
+                        let badgeEstadoColor = 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 border-yellow-300';
+                        if(estadoActual === 'Atendido') badgeEstadoColor = 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-300';
+                        if(estadoActual === 'Cancelado') badgeEstadoColor = 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-300';
+
+                        const testsStr = (t.tests && Array.isArray(t.tests)) ? t.tests.join(', ') : 'Ninguno';
+
+                        htmlTurnos += `
+                            <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border-l-4 ${t.pagado ? 'border-green-500' : 'border-orange-400'} space-y-2 mt-2 border dark:border-gray-700">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="flex items-center space-x-1.5 mb-1 flex-wrap gap-y-1">
+                                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">${t.hora} hs</span>
+                                            <span class="text-xs font-bold px-2 py-0.5 rounded border ${badgeColor}">${t.consultorio}</span>
+                                            <select onchange="cambiarEstadoTurno(${t.id}, this.value)" class="text-[11px] font-bold px-2 py-0.5 rounded border ${badgeEstadoColor} outline-none cursor-pointer bg-transparent">
+                                                <option value="Solicitado" ${estadoActual === 'Solicitado' ? 'selected' : ''}>Solicitado</option>
+                                                <option value="Atendido" ${estadoActual === 'Atendido' ? 'selected' : ''}>Atendido</option>
+                                                <option value="Cancelado" ${estadoActual === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                                            </select>
+                                        </div>
+                                        <h3 class="text-sm font-bold mt-1 dark:text-white">${t.nombre}</h3>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 block">${t.obraSocial}</span>
+                                        <span class="font-bold text-sm text-gray-700 dark:text-gray-200">$${t.monto}</span>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded space-y-1">
+                                    <div class="flex justify-between">
+                                        <span><strong>Zona:</strong> ${t.zona} (${t.lateralidad})</span>
+                                        <span><strong>EVA:</strong> ${t.eva}/10</span>
+                                    </div>
+                                    <p><strong>Tests:</strong> ${testsStr}</p>
+                                    ${t.notas ? `<p class="italic text-gray-500 dark:text-gray-400"><strong>Nota:</strong> ${t.notas}</p>` : ''}
+                                </div>
+                                <div class="flex justify-between items-center pt-1 border-t dark:border-gray-700">
+                                    <div class="space-x-1">
+                                        <button onclick="togglePago(${t.id})" class="text-xs font-semibold px-2 py-1 rounded ${t.pagado ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'}">
+                                            ${t.pagado ? 'Cobrado' : 'Pendiente'}
+                                        </button>
+                                        <button onclick="eliminarTurno(${t.id})" class="text-xs text-red-500 px-1"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                    <button onclick="enviarRecordatorioTurno(${t.id})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 text-xs font-bold flex items-center">
+                                        <i class="fa-brands fa-whatsapp text-sm mr-1"></i> Recordatorio
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML += `
+                    <div class="bg-gray-100 dark:bg-gray-800/60 p-3 rounded-xl shadow-inner border dark:border-gray-700">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b dark:border-gray-700 pb-1 flex justify-between">
+                            <span>${dia}</span>
+                            <span class="font-normal">${fechaExactaStr}</span>
+                        </h3>
+                        ${htmlTurnos}
+                    </div>
+                `;
+            });
+        }
+
+        // Lógica de Historias Clínicas en su propia pestaña
+        function mostrarHistorialPaciente() {
+            const nombreSel = document.getElementById('select-historia-paciente').value;
+            const container = document.getElementById('detalle-historia-paciente');
+            if(!container) return;
+
+            if(!nombreSel) {
+                container.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su ficha y agregar nuevas notas de evolución.</p>';
+                return;
+            }
+
+            const sesiones = historialClinico[nombreSel] || [];
+            
+            let htmlSesiones = '';
+            if(sesiones.length === 0) {
+                htmlSesiones = '<p class="text-xs text-gray-400 italic py-2">No hay sesiones registradas todavía.</p>';
+            } else {
+                sesiones.forEach((s, idx) => {
+                    htmlSesiones += `
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border dark:border-gray-600 space-y-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-bold text-blue-600 dark:text-blue-400">Sesión #${idx + 1} (${s.fecha})</span>
+                                <span class="bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded font-bold">EVA: ${s.eva}/10</span>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1"><strong>Zona:</strong> ${s.zona || 'N/A'} (${s.lateralidad || ''})</p>
+                            <p class="text-xs text-gray-700 dark:text-gray-200 mt-1"><strong>Evolución / Qué se hizo:</strong> ${s.nota || 'Sin observaciones'}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700 space-y-3">
+                    <div class="flex justify-between items-center border-b dark:border-gray-700 pb-2">
+                        <h3 class="text-base font-bold dark:text-white"><i class="fa-solid fa-user-injured mr-2"></i>${nombreSel}</h3>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Registrar Nueva Sesión</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5">Escala EVA (0-10)</label>
+                                <input type="number" id="nuevo-eva" min="0" max="10" value="3" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5">Coseguro Cobrado ($)</label>
+                                <input type="number" id="nuevo-monto" value="15000" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5">Observaciones y Tratamiento Realizado</label>
+                            <textarea id="nueva-nota-sesion" rows="2" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. Se trabajó magnetoterapia y estiramientos..."></textarea>
+                        </div>
+                        <button onclick="guardarNuevaSesionHistorial('${nombreSel}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded shadow transition">
+                            Guardar Nota en Historia Clínica
+                        </button>
+                    </div>
+
+                    <div class="space-y-2 pt-3 border-t dark:border-gray-700">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Historial Cronológico</h4>
+                        <div class="space-y-2 max-h-60 overflow-y-auto">
+                            ${htmlSesiones}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function guardarNuevaSesionHistorial(nombrePaciente) {
+            const eva = parseInt(document.getElementById('nuevo-eva').value) || 0;
+            const monto = parseFloat(document.getElementById('nuevo-monto').value) || 0;
+            const nota = document.getElementById('nueva-nota-sesion').value.trim();
+
+            if(!nota) {
+                alert("Por favor, escribí alguna observación de la sesión.");
+                return;
+            }
+
+            if(!historialClinico[nombrePaciente]) historialClinico[nombrePaciente] = [];
+
+            const sesionData = {
+                fecha: new Date().toLocaleDateString('es-ES'),
+                eva,
+                nota,
+                monto
+            };
+
+            historialClinico[nombrePaciente].push(sesionData);
+            localStorage.setItem('kine_historial_v14', JSON.stringify(historialClinico));
+
+            // Registrar también como ingreso en turnos pagados para la caja
+            const turnoRef = turnos.find(t => t.nombre === nombrePaciente);
+            const nuevoTurnoCobro = {
+                id: Date.now() + Math.random(),
+                nombre: nombrePaciente,
+                consultorio: turnoRef ? turnoRef.consultorio : 'Caroyita',
+                dia: 'Sesión Clínica',
+                semanaOffset: offsetSemana,
+                fechaCreacion: new Date().toISOString(),
+                hora: '00:00',
+                telefono: turnoRef ? turnoRef.telefono : '',
+                obraSocial: turnoRef ? turnoRef.obraSocial : 'Particular',
+                zona: turnoRef ? turnoRef.zona : 'General',
+                lateralidad: '',
+                tests: [],
+                eva,
+                notas: nota,
+                monto,
+                pagado: true,
+                estado: 'Atendido'
+            };
+            turnos.push(nuevoTurnoCobro);
+            localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+
+            alert("¡Nota guardada en la historia clínica y registrada en caja con éxito!");
+            mostrarHistorialPaciente();
+        }
+
+        function cambiarEstadoTurno(id, nuevoEstado) {
+            turnos = turnos.map(t => t.id === id ? {...t, estado: nuevoEstado} : t);
+            localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+            renderAgenda();
+        }
+
+        function enviarRecordatorioTurno(id) {
+            const turnoSeleccionado = turnos.find(t => t.id === id);
+            if(!turnoSeleccionado) return;
+
+            const turnosPacienteSemana = turnos.filter(t => 
+                t.telefono === turnoSeleccionado.telefono && 
+                t.semanaOffset === offsetSemana && 
+                t.estado !== 'Cancelado'
+            );
+
+            let detalleTurnos = turnosPacienteSemana.map(t => `${t.dia} a las ${t.hora} hs`).join(', ');
+
+            const msg = `Hola ${turnoSeleccionado.nombre}, te recordamos tus turnos de kinesiología para esta semana: ${detalleTurnos}. ¡Te esperamos!`;
+            window.open(`https://wa.me/${turnoSeleccionado.telefono}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function togglePago(id) {
+            turnos = turnos.map(t => t.id === id ? {...t, pagado: !t.pagado} : t);
+            localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+            renderAgenda();
+        }
+
+        function eliminarTurno(id) {
+            if(confirm("¿Eliminar este turno?")) {
+                turnos = turnos.filter(t => t.id !== id);
+                localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+                renderAgenda();
+            }
+        }
+
+        const formTurno = document.getElementById('form-turno');
+        if(formTurno) {
+            formTurno.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const nombre = document.getElementById('nombre').value.trim();
+                const consultorio = document.getElementById('consultorio').value;
+                const hora = document.getElementById('hora').value;
+                const telefono = document.getElementById('telefono').value;
+                const obraSocial = document.getElementById('obra-social').value || "Particular";
+                const monto = parseFloat(document.getElementById('monto').value) || 0;
+                const zona = document.getElementById('zona').value;
+                const lateralidad = document.getElementById('lateralidad').value;
+                const eva = parseInt(document.getElementById('eva').value);
+                const notas = document.getElementById('notas').value;
+                const estadoTipo = document.getElementById('estado-tipo').value;
+
+                const testsTildados = [];
+                document.querySelectorAll('input[name="tests"]:checked').forEach(chk => testsTildados.push(chk.value));
+
+                if(!historialClinico[nombre]) historialClinico[nombre] = [];
+                historialClinico[nombre].push({
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    zona, lateralidad, eva, nota: notas, tests: testsTildados, monto
+                });
+                localStorage.setItem('kine_historial_v14', JSON.stringify(historialClinico));
+
+                if(estadoTipo === 'espera') {
+                    const nuevoEspera = {
+                        id: Date.now(),
+                        nombre, consultorio, telefono, obraSocial, monto, zona, lateralidad, tests: testsTildados, eva, notas
+                    };
+                    espera.push(nuevoEspera);
+                    localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+                    alert("Paciente guardado en Lista de Espera.");
+                    this.reset();
+                    cambiarTab('espera');
+                } else {
+                    const checkboxesDias = document.querySelectorAll('input[name="dias"]:checked');
+                    if (checkboxesDias.length === 0) {
+                        alert("Selecciona al menos un día para el turno.");
+                        return;
+                    }
+
+                    checkboxesDias.forEach(chk => {
+                        const nuevoTurno = {
+                            id: Date.now() + Math.random(),
+                            nombre, consultorio,
+                            dia: chk.value,
+                            semanaOffset: offsetSemana,
+                            fechaCreacion: new Date().toISOString(),
+                            hora, telefono, obraSocial, zona, lateralidad, tests: testsTildados, eva, notas, monto, 
+                            pagado: true,
+                            estado: 'Solicitado'
+                        };
+                        turnos.push(nuevoTurno);
+                    });
+
+                    localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+                    this.reset();
+                    const valEvaEl = document.getElementById('val-eva');
+                    if(valEvaEl) valEvaEl.innerText = "5";
+                    actualizarTests();
+                    cambiarTab('agenda');
+                }
+            });
+        }
+
+        function renderEspera() {
+            const container = document.getElementById('lista-espera-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if(espera.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 py-6">No hay pacientes en lista de espera.</p>';
+                return;
+            }
+
+            espera.forEach(e => {
+                const esCaroyita = e.consultorio === 'Caroyita';
+                const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-emerald-300' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border-blue-300';
+                const testsStr = (e.tests && Array.isArray(e.tests)) ? e.tests.join(', ') : 'Ninguno';
+
+                container.innerHTML += `
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700 space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded border ${badgeColor}">${e.consultorio}</span>
+                                <h3 class="text-base font-bold mt-1 dark:text-white">${e.nombre}</h3>
+                            </div>
+                            <span class="font-bold text-gray-700 dark:text-gray-200">$${e.monto}</span>
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded space-y-1">
+                            <p><strong>Tel:</strong> ${e.telefono} | <strong>OS:</strong> ${e.obraSocial}</p>
+                            <p><strong>Zona:</strong> ${e.zona} (${e.lateralidad}) - <strong>EVA:</strong> ${e.eva}/10</p>
+                            <p><strong>Tests:</strong> ${testsStr}</p>
+                            ${e.notas ? `<p class="italic"><strong>Notas:</strong> ${e.notas}</p>` : ''}
+                        </div>
+                        <div class="flex justify-end space-x-2 pt-1">
+                            <button onclick="darTurnoDesdeEspera(${e.id})" class="bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded shadow">
+                                Dar Turno (Pasar a Agenda)
+                            </button>
+                            <button onclick="eliminarEspera(${e.id})" class="text-red-500 text-xs px-2"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function eliminarEspera(id) {
+            espera = espera.filter(e => e.id !== id);
+            localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+            renderEspera();
+        }
+
+        function darTurnoDesdeEspera(id) {
+            const paciente = espera.find(e => e.id === id);
+            if(!paciente) return;
+
+            document.getElementById('nombre').value = paciente.nombre;
+            document.getElementById('telefono').value = paciente.telefono;
+            document.getElementById('obra-social').value = paciente.obraSocial;
+            document.getElementById('consultorio').value = paciente.consultorio;
+            document.getElementById('zona').value = paciente.zona;
+            document.getElementById('monto').value = paciente.monto;
+            document.getElementById('estado-tipo').value = 'turno';
+            toggleDiasAsistencia();
+            
+            espera = espera.filter(e => e.id !== id);
+            localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+            
+            cambiarTab('evaluacion');
+            alert("Datos cargados. Selecciona los días de la semana y guarda para asignarlo a la agenda.");
+        }
+
+        function renderCaja() {
+            const container = document.getElementById('lista-caja');
+            if(!container) return;
+            container.innerHTML = '';
+            let total = 0;
+
+            const mesFiltroInput = document.getElementById('filtro-mes');
+            const mesFiltro = mesFiltroInput ? mesFiltroInput.value : anioActual + '-' + mesActualStr;
+
+            const cobrados = turnos.filter(t => {
+                if(!t.pagado || t.estado === 'Cancelado') return false;
+                const fechaStr = t.fechaCreacion ? t.fechaCreacion.substring(0, 7) : mesFiltro;
+                return fechaStr === mesFiltro;
+            });
+
+            if(cobrados.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 py-4">No hay ingresos registrados en este mes.</p>';
+            }
+
+            cobrados.forEach(t => {
+                total += t.monto;
+                const esCaroyita = t.consultorio === 'Caroyita';
+                const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
+
+                container.innerHTML += `
+                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700 last:border-0">
+                        <div>
+                            <p class="font-semibold dark:text-white">${t.nombre} <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeColor}">${t.consultorio}</span></p>
+                            <p class="text-xs text-gray-400">${t.dia} - ${t.zona} (${t.obraSocial})</p>
+                        </div>
+                        <span class="font-bold text-green-600 dark:text-green-400">+$${t.monto}</span>
+                    </div>
+                `;
+            });
+
+            const totalCajaEl = document.getElementById('total-caja');
+            if(totalCajaEl) {
+                totalCajaEl.innerText = `$${total.toLocaleString()}`;
+            }
+        }
+
+        function exportarBackup() {
+            const data = { turnos, espera, historialClinico };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kineapp_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function importarBackup(event) {
+            const archivo = event.target.files[0];
+            if(!archivo) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.turnos && data.espera) {
+                        turnos = data.turnos;
+                        espera = data.espera;
+                        historialClinico = data.historialClinico || {};
+                        localStorage.setItem('kine_turnos_v14', JSON.stringify(turnos));
+                        localStorage.setItem('kine_espera_v14', JSON.stringify(espera));
+                        localStorage.setItem('kine_historial_v14', JSON.stringify(historialClinico));
+                        alert("¡Datos importados con éxito!");
+                        renderAgenda();
+                    } else {
+                        alert("El archivo no tiene el formato correcto.");
+                    }
+                } catch(err) {
+                    alert("Error al leer el archivo JSON.");
+                }
+            };
+            lector.readAsText(archivo);
+        }
+
+        renderAgenda();
+    </script>
+</body>
+</html>
