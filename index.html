@@ -2,921 +2,307 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KineApp Consultorio Pro</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KineApp - Gestión de Kinesiología</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        caroyita: '#10B981', // Verde
+                        axis: '#2563EB',      // Azul Francia
+                        darkbg: '#121212',
+                        cardbg: '#1E1E1E',
+                        cardhover: '#2A2A2A'
+                    }
+                }
+            }
         }
     </script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 pb-20 transition-colors duration-200">
+<body class="bg-darkbg text-gray-100 min-h-screen font-sans">
 
-    <!-- ENCABEZADO -->
-    <header class="bg-blue-600 dark:bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-xl font-bold"><i class="fa-solid fa-heart-pulse mr-2"></i>KineApp Pro</h1>
-        <div class="flex items-center space-x-2">
-            <span id="fecha-actual" class="text-xs bg-blue-700 dark:bg-blue-800 px-2 py-1 rounded-full"></span>
-            <button onclick="toggleDarkMode()" class="bg-blue-700 dark:bg-blue-800 p-1.5 rounded-full text-sm">
-                <i id="icono-modo" class="fa-solid fa-moon"></i>
-            </button>
+    <!-- Header Principal -->
+    <header class="bg-cardbg border-b border-gray-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-4 h-8 rounded bg-gradient-to-b from-caroyita to-axis"></div>
+                <h1 class="text-2xl font-bold tracking-wide">KineApp</h1>
+            </div>
+            <!-- Pestañas de Navegación -->
+            <nav class="flex gap-2 bg-gray-900 p-1 rounded-xl border border-gray-800">
+                <button onclick="switchTab('agenda')" id="nav-agenda" class="px-4 py-2 rounded-lg text-sm font-medium transition bg-gray-800 text-white shadow">📅 Agenda Semanal</button>
+                <button onclick="switchTab('pacientes')" id="nav-pacientes" class="px-4 py-2 rounded-lg text-sm font-medium transition text-gray-400 hover:text-white">👥 Pacientes & H.C.</button>
+                <button onclick="switchTab('caja')" id="nav-caja" class="px-4 py-2 rounded-lg text-sm font-medium transition text-gray-400 hover:text-white">💰 Caja & Obras Soc.</button>
+            </nav>
         </div>
     </header>
 
-    <!-- CONTENEDOR DE SECCIONES -->
-    <main class="p-4 max-w-md mx-auto">
+    <main class="max-w-7xl mx-auto p-4 sm:p-6">
 
-        <!-- 1. SECCIÓN AGENDA -->
-        <section id="seccion-agenda" class="space-y-4">
-            <div class="flex justify-between items-center bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border dark:border-gray-700">
-                <button onclick="cambiarSemana(-1)" class="text-blue-600 dark:text-blue-400 font-bold px-2 py-1"><i class="fa-solid fa-chevron-left"></i></button>
-                <div class="text-center">
-                    <h2 id="titulo-semana" class="text-sm font-bold text-gray-700 dark:text-gray-200">Semana</h2>
-                    <button onclick="irSemanaActual()" class="text-xs text-blue-500 dark:text-blue-400 underline">Semana Actual</button>
-                </div>
-                <button onclick="cambiarSemana(1)" class="text-blue-600 dark:text-blue-400 font-bold px-2 py-1"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
-            
-            <div id="lista-turnos" class="space-y-4"></div>
-        </section>
-
-        <!-- 2. SECCIÓN NUEVA EVALUACIÓN Y TURNO -->
-        <section id="seccion-evaluacion" class="hidden space-y-4">
-            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Cargar Turno y Paquete</h2>
-            <form id="form-turno" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-3 border dark:border-gray-700">
-                
+        <!-- ================= SECCIÓN AGENDA ================= -->
+        <section id="tab-agenda" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cardbg p-4 rounded-xl border border-gray-800">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Paciente Recurrente (Opcional)</label>
-                    <select id="select-paciente-frecuente" onchange="cargarDatosPaciente()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white outline-none">
-                        <option value="">-- Nuevo Paciente --</option>
-                    </select>
+                    <h2 class="text-xl font-semibold">Agenda de Turnos</h2>
+                    <p class="text-xs text-gray-400">Vista semanal general y detalle por día. Turnos ordenados por horario.</p>
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nombre y Apellido</label>
-                    <input type="text" id="nombre" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. Juan Pérez">
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Consultorio</label>
-                        <select id="consultorio" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                            <option value="Caroyita">Caroyita</option>
-                            <option value="Axis">Axis</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Hora</label>
-                        <input type="time" id="hora" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Total Sesiones (Bono)</label>
-                        <input type="number" id="total-sesiones" value="10" min="1" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Estado</label>
-                        <select id="estado-tipo" onchange="toggleDiasAsistencia()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                            <option value="turno">Agenda Semanal</option>
-                            <option value="espera">Lista de Espera</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="contenedor-dias" class="space-y-1">
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Días de asistencia</label>
-                    <div class="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg border dark:border-gray-600 text-xs">
-                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Lunes" class="accent-blue-600"> <span>Lunes</span></label>
-                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Martes" class="accent-blue-600"> <span>Martes</span></label>
-                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Miércoles" class="accent-blue-600"> <span>Miércoles</span></label>
-                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Jueves" class="accent-blue-600"> <span>Jueves</span></label>
-                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Viernes" class="accent-blue-600"> <span>Viernes</span></label>
-                        <label class="flex items-center space-x-1"><input type="checkbox" name="dias" value="Sábado" class="accent-blue-600"> <span>Sábado</span></label>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Celular (WhatsApp)</label>
-                    <input type="tel" id="telefono" value="549" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="5493512345678">
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Obra Social</label>
-                        <input type="text" id="obra-social" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Ej. OSDE">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Coseguro ($)</label>
-                        <input type="number" id="monto" value="15000" required class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Zona Anatómica</label>
-                        <select id="zona" onchange="actualizarTests()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                            <option value="Cervicales">Cervicales</option>
-                            <option value="Dorsales">Dorsales</option>
-                            <option value="Lumbares">Lumbares</option>
-                            <option value="Cadera">Cadera</option>
-                            <option value="Rodilla">Rodilla</option>
-                            <option value="Tobillo / Pie">Tobillo / Pie</option>
-                            <option value="Hombro">Hombro</option>
-                            <option value="Codo">Codo</option>
-                            <option value="Muñeca / Mano">Muñeca / Mano</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Lateralidad</label>
-                        <select id="lateralidad" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                            <option value="Bilateral / N/A">Bilateral / N/A</option>
-                            <option value="Derecha">Derecha</option>
-                            <option value="Izquierda">Izquierda</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Tests Positivos</label>
-                    <div id="contenedor-tests" class="grid grid-cols-2 gap-1.5 bg-gray-50 dark:bg-gray-700 p-2.5 rounded-lg border dark:border-gray-600 text-xs"></div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Escala de Dolor (EVA): <span id="val-eva" class="font-bold text-blue-600 dark:text-blue-400">5</span>/10</label>
-                    <input type="range" id="eva" min="0" max="10" value="5" class="w-full accent-blue-600" oninput="document.getElementById('val-eva').innerText = this.value">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nota Inicial</label>
-                    <textarea id="notas" rows="2" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Observaciones clínicas iniciales..."></textarea>
-                </div>
-
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow transition">
-                    Guardar Registro
+                <button onclick="openTurnoModal()" class="bg-gradient-to-r from-caroyita to-emerald-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:opacity-90 transition flex items-center gap-2">
+                    <span>➕</span> Nuevo Turno
                 </button>
-            </form>
+            </div>
+
+            <!-- Selector de Vista: Semanal vs Detalle Diario -->
+            <div id="agenda-view-container" class="space-y-6">
+                <!-- Se inyecta la vista semanal o diaria vía JS -->
+            </div>
         </section>
 
-        <!-- 3. SECCIÓN HISTORIAS CLÍNICAS CON PLANTILLAS RÁPIDAS -->
-        <section id="seccion-historia" class="hidden space-y-4">
-            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Historias Clínicas y Paquetes</h2>
-            
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-3 border dark:border-gray-700">
+        <!-- ================= SECCIÓN PACIENTES E HISTORIAS CLÍNICAS ================= -->
+        <section id="tab-pacientes" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cardbg p-4 rounded-xl border border-gray-800">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Seleccionar Paciente</label>
-                    <select id="select-historia-paciente" onchange="mostrarHistorialPaciente()" class="w-full border dark:border-gray-600 rounded-lg p-2 text-sm bg-white dark:bg-gray-700 dark:text-white outline-none">
-                        <option value="">-- Seleccionar Paciente --</option>
-                    </select>
+                    <h2 class="text-xl font-semibold">Historias Clínicas y Pacientes</h2>
+                    <p class="text-xs text-gray-400">Cargá o editá evoluciones en el momento de la sesión y gestioná registros.</p>
                 </div>
+                <button onclick="openPacienteModal()" class="bg-axis text-white px-4 py-2 rounded-lg font-medium shadow hover:opacity-90 transition flex items-center gap-2">
+                    <span>👤</span> Nuevo Paciente
+                </button>
             </div>
 
-            <div id="detalle-historia-paciente" class="space-y-3">
-                <p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su bono de sesiones y registrar notas rápidas.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="pacientes-list-container">
+                <!-- Tarjetas de pacientes inyectadas por JS -->
             </div>
         </section>
 
-        <!-- 4. SECCIÓN LISTA DE ESPERA -->
-        <section id="seccion-espera" class="hidden space-y-4">
-            <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Lista de Espera</h2>
-            <div id="lista-espera-container" class="space-y-3"></div>
-        </section>
-
-        <!-- 5. SECCIÓN CAJA Y BACKUP -->
-        <section id="seccion-caja" class="hidden space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-gray-700 dark:text-gray-200">Caja y Ajustes</h2>
-                <input type="month" id="filtro-mes" onchange="renderCaja()" class="border dark:border-gray-600 rounded-lg p-1 text-xs bg-white dark:bg-gray-700 dark:text-white shadow-sm">
-            </div>
-            
-            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg text-center">
-                <p class="text-xs uppercase tracking-wider opacity-90">Ingresos Totales del Mes</p>
-                <p id="total-caja" class="text-3xl font-extrabold mt-1">$0</p>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 border dark:border-gray-700">
-                <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 border-b dark:border-gray-700 pb-2">Herramientas Pro</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="exportarBackup()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow flex items-center justify-center">
-                        <i class="fa-solid fa-download mr-1.5"></i> Exportar Datos
-                    </button>
-                    <label class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow flex items-center justify-center cursor-pointer">
-                        <i class="fa-solid fa-upload mr-1.5"></i> Importar Datos
-                        <input type="file" id="input-backup" onchange="importarBackup(event)" class="hidden" accept=".json">
-                    </label>
+        <!-- ================= SECCIÓN CAJA Y OBRAS SOCIALES ================= -->
+        <section id="tab-caja" class="hidden space-y-6">
+            <div class="bg-cardbg p-6 rounded-xl border border-gray-800 space-y-4">
+                <h2 class="text-xl font-semibold">Cierre de Caja y Obras Sociales</h2>
+                <p class="text-sm text-gray-400">Control de coseguros, obras sociales y totales mensuales.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <span class="text-xs text-gray-400">Total Caroyita (Mes)</span>
+                        <h3 class="text-2xl font-bold text-caroyita mt-1" id="caja-caroyita">$0.00</h3>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <span class="text-xs text-gray-400">Total Axis (Mes)</span>
+                        <h3 class="text-2xl font-bold text-axis mt-1" id="caja-axis">$0.00</h3>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                        <span class="text-xs text-gray-400">Coseguros Recaudados</span>
+                        <h3 class="text-2xl font-bold text-emerald-400 mt-1" id="caja-coseguros">$0.00</h3>
+                    </div>
                 </div>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 border dark:border-gray-700">
-                <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 border-b dark:border-gray-700 pb-2">Detalle de Cobros Mensuales</h3>
-                <div id="lista-caja" class="space-y-2 text-sm"></div>
             </div>
         </section>
 
     </main>
 
-    <!-- MENÚ DE NAVEGACIÓN INFERIOR -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 flex justify-around py-2.5 shadow-lg z-50 max-w-md mx-auto">
-        <button onclick="cambiarTab('agenda')" id="btn-agenda" class="flex flex-col items-center text-blue-600 dark:text-blue-400">
-            <i class="fa-solid fa-calendar-week text-base"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Agenda</span>
-        </button>
-        <button onclick="cambiarTab('evaluacion')" id="btn-evaluacion" class="flex flex-col items-center text-gray-400">
-            <i class="fa-solid fa-notes-medical text-base"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Cargar</span>
-        </button>
-        <button onclick="cambiarTab('historia')" id="btn-historia" class="flex flex-col items-center text-gray-400">
-            <i class="fa-solid fa-book-medical text-base"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Historia</span>
-        </button>
-        <button onclick="cambiarTab('espera')" id="btn-espera" class="flex flex-col items-center text-gray-400">
-            <i class="fa-solid fa-clock text-base"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Espera</span>
-        </button>
-        <button onclick="cambiarTab('caja')" id="btn-caja" class="flex flex-col items-center text-gray-400">
-            <i class="fa-solid fa-wallet text-base"></i>
-            <span class="text-[10px] mt-0.5 font-medium">Caja</span>
-        </button>
-    </nav>
+    <!-- MODAL NUEVO TURNO -->
+    <div id="turno-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-cardbg border border-gray-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-semibold" id="turno-modal-title">Agendar Nuevo Turno</h3>
+            <form id="turno-form" onsubmit="saveTurno(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Paciente</label>
+                    <input type="text" id="turno-paciente" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-caroyita">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Clínica</label>
+                        <select id="turno-clinica" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-caroyita">
+                            <option value="Caroyita">Caroyita (Verde)</option>
+                            <option value="Axis">Axis (Azul)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Día de la semana</label>
+                        <select id="turno-dia" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-caroyita">
+                            <option value="Lunes">Lunes</option>
+                            <option value="Martes">Martes</option>
+                            <option value="Miércoles">Miércoles</option>
+                            <option value="Jueves">Jueves</option>
+                            <option value="Viernes">Viernes</option>
+                            <option value="Sábado">Sábado</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Horario (ej: 14:30)</label>
+                    <input type="time" id="turno-horario" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-caroyita">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeTurnoModal()" class="px-4 py-2 rounded-lg text-sm bg-gray-800 hover:bg-gray-700 text-gray-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-caroyita text-white font-medium hover:opacity-90">Guardar Turno</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <!-- SCRIPT DE LÓGICA -->
+    <!-- MODAL HISTORIA CLÍNICA / SESIÓN -->
+    <div id="hc-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-cardbg border border-gray-800 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-semibold" id="hc-modal-title">Evolución de Sesión / Historia Clínica</h3>
+            <form id="hc-form" onsubmit="saveHistoriaClinica(event)" class="space-y-4">
+                <input type="hidden" id="hc-paciente-id">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Zona Anatómica</label>
+                    <select id="hc-zona" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white">
+                        <option value="Cervicales">Cervicales</option>
+                        <option value="Dorsales">Dorsales</option>
+                        <option value="Lumbares">Lumbares</option>
+                        <option value="Cadera">Cadera</option>
+                        <option value="Rodilla">Rodilla</option>
+                        <option value="Tobillo">Tobillo</option>
+                        <option value="Hombro">Hombro</option>
+                        <option value="Codo">Codo</option>
+                        <option value="Muñeca">Muñeca</option>
+                        <option value="Mano">Mano</option>
+                        <option value="Pie">Pie</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Laterality</label>
+                        <select id="hc-laterality" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white">
+                            <option value="Bilateral">Bilateral</option>
+                            <option value="Izquierdo/a">Izquierdo/a</option>
+                            <option value="Derecho/a">Derecho/a</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Coseguro / Obra Social</label>
+                        <input type="number" id="hc-coseguro" placeholder="0.00" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Detalle de la Sesión / Notas Clínicas</label>
+                    <textarea id="hc-notas" rows="4" placeholder="Evolución del paciente, maniobras realizadas..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-caroyita"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeHcModal()" class="px-4 py-2 rounded-lg text-sm bg-gray-800 hover:bg-gray-700 text-gray-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-axis text-white font-medium hover:opacity-90">Guardar Evolución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT -->
     <script>
-        function toggleDarkMode() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('kine_theme', 'light');
-                document.getElementById('icono-modo').className = "fa-solid fa-moon";
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('kine_theme', 'dark');
-                document.getElementById('icono-modo').className = "fa-solid fa-sun";
-            }
-        }
-
-        if (localStorage.getItem('kine_theme') === 'dark') {
-            document.documentElement.classList.add('dark');
-            const iconoModo = document.getElementById('icono-modo');
-            if(iconoModo) iconoModo.className = "fa-solid fa-sun";
-        }
-
-        const fechaActualObj = new Date();
-        const fechaActualEl = document.getElementById('fecha-actual');
-        if(fechaActualEl) fechaActualEl.innerText = fechaActualObj.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-        
-        const anioActual = fechaActualObj.getFullYear();
-        const mesActualStr = String(fechaActualObj.getMonth() + 1).padStart(2, '0');
-        const filtroMesEl = document.getElementById('filtro-mes');
-        if(filtroMesEl) filtroMesEl.value = `${anioActual}-${mesActualStr}`;
-
-        let offsetSemana = 0;
-
-        function obtenerLunesDeSemana(offset) {
-            const d = new Date();
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
-            return new Date(d.setDate(diff));
-        }
-
-        function obtenerFechasSemana(offset) {
-            const lunes = obtenerLunesDeSemana(offset);
-            let fechas = {};
-            const nombresDias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-            
-            nombresDias.forEach((dia, index) => {
-                const tempDate = new Date(lunes);
-                tempDate.setDate(lunes.getDate() + index);
-                fechas[dia] = tempDate.toISOString().split('T')[0];
-            });
-            return { lunes, fechas };
-        }
-
-        function actualizarTituloSemana() {
-            const { lunes } = obtenerFechasSemana(offsetSemana);
-            const domingo = new Date(lunes);
-            domingo.setDate(lunes.getDate() + 5);
-            
-            const opciones = { day: 'numeric', month: 'short' };
-            const tituloSemanaEl = document.getElementById('titulo-semana');
-            if(tituloSemanaEl) {
-                tituloSemanaEl.innerText = `Semana: ${lunes.toLocaleDateString('es-ES', opciones)} al ${domingo.toLocaleDateString('es-ES', opciones)}`;
-            }
-        }
-
-        function cambiarSemana(dir) {
-            offsetSemana += dir;
-            actualizarTituloSemana();
-            renderAgenda();
-        }
-
-        function irSemanaActual() {
-            offsetSemana = 0;
-            actualizarTituloSemana();
-            renderAgenda();
-        }
-
-        actualizarTituloSemana();
-
-        const testsPorZona = {
-            "Cervicales": ["Spurling (+)", "Distracción (+)", "Valsalva (+)", "ROM alterado"],
-            "Dorsales": ["Rotación limitada", "Palpación costovertebral", "Rigidez extensión"],
-            "Lumbares": ["Schober (+)", "Lasegue (+)", "Bragard (+)", "Slump Test (+)"],
-            "Cadera": ["Faber / Patrick (+)", "FADIR (+)", "Rotación interna limitada"],
-            "Rodilla": ["Cajón Ant/Post (+)", "Lachman (+)", "Bostezo med/lat (+)", "McMurray (+)"],
-            "Tobillo / Pie": ["Cajón anterior (+)", "Inversión forzada (+)", "Squeeze test (+)"],
-            "Hombro": ["Neer (+)", "Hawkins-Kennedy (+)", "Jobe (+)", "Apprehension (+)"],
-            "Codo": ["Cozen Test (+)", "Test de Golfista (+)", "Bostezo articular"],
-            "Muñeca / Mano": ["Phalen (+)", "Tinel (+)", "Finkelstein (+)"]
+        // Estado inicial de la App (con persistencia local)
+        let state = JSON.parse(localStorage.getItem('kineapp_state')) || {
+            turnos: [
+                { id: 1, paciente: "María Gómez", clinica: "Caroyita", dia: "Lunes", horario: "09:00" },
+                { id: 2, paciente: "Carlos Pérez", clinica: "Axis", dia: "Lunes", horario: "10:30" }
+            ],
+            pacientes: [
+                { id: 1, nombre: "María Gómez", obraSocial: "OSDE", historiaClinica: [] },
+                { id: 2, nombre: "Carlos Pérez", obraSocial: "Swiss Medical", historiaClinica: [] }
+            ]
         };
 
-        function actualizarTests() {
-            const zonaEl = document.getElementById('zona');
-            if(!zonaEl) return;
-            const zona = zonaEl.value;
-            const contenedor = document.getElementById('contenedor-tests');
-            if(!contenedor) return;
-            contenedor.innerHTML = '';
-            
-            if (testsPorZona[zona]) {
-                testsPorZona[zona].forEach(test => {
-                    contenedor.innerHTML += `
-                        <label class="flex items-center space-x-1">
-                            <input type="checkbox" name="tests" value="${test}" class="accent-blue-600">
-                            <span>${test}</span>
-                        </label>
-                    `;
-                });
-            }
-        }
-        actualizarTests();
+        let selectedDayFilter = null; // Para la vista drill-down de días
 
-        function toggleDiasAsistencia() {
-            const estadoEl = document.getElementById('estado-tipo');
-            if(!estadoEl) return;
-            const estado = estadoEl.value;
-            const contenedorDias = document.getElementById('contenedor-dias');
-            if(!contenedorDias) return;
-            if(estado === 'espera') {
-                contenedorDias.classList.add('hidden');
-            } else {
-                contenedorDias.classList.remove('hidden');
-            }
+        function saveData() {
+            localStorage.setItem('kineapp_state', JSON.stringify(state));
+            renderApp();
         }
 
-        let turnos = JSON.parse(localStorage.getItem('kine_turnos_v16')) || [];
-        let espera = JSON.parse(localStorage.getItem('kine_espera_v16')) || [];
-        let historialClinico = JSON.parse(localStorage.getItem('kine_historial_v16')) || {};
-        let paquetesPacientes = JSON.parse(localStorage.getItem('kine_paquetes_v16')) || {};
-
-        function actualizarSelectPacientes() {
-            const select = document.getElementById('select-paciente-frecuente');
-            const selectHistoria = document.getElementById('select-historia-paciente');
-            
-            const nombresSet = new Set();
-            turnos.forEach(t => nombresSet.add(t.nombre));
-            espera.forEach(e => nombresSet.add(e.nombre));
-            Object.keys(historialClinico).forEach(h => nombresSet.add(h));
-
-            if(select) {
-                select.innerHTML = '<option value="">-- Nuevo Paciente --</option>';
-                nombresSet.forEach(nombre => {
-                    select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
-                });
-            }
-
-            if(selectHistoria) {
-                const actual = selectHistoria.value;
-                selectHistoria.innerHTML = '<option value="">-- Seleccionar Paciente --</option>';
-                nombresSet.forEach(nombre => {
-                    selectHistoria.innerHTML += `<option value="${nombre}" ${nombre === actual ? 'selected' : ''}>${nombre}</option>`;
-                });
-            }
+        function switchTab(tab) {
+            ['agenda', 'pacientes', 'caja'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden'); document.getElementById(`nav-${t}`).classList.remove('bg-gray-800', 'text-white', 'shadow');
+                document.getElementById(`nav-${t}`).classList.add('text-gray-400'); }); document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`nav-${tab}`).classList.add('bg-gray-800', 'text-white', 'shadow'); document.getElementById(`nav-${tab}`).classList.remove('text-gray-400');
         }
 
-        function cargarDatosPaciente() {
-            const selectPaciente = document.getElementById('select-paciente-frecuente');
-            if(!selectPaciente) return;
-            const nombreSel = selectPaciente.value;
-            if(!nombreSel) return;
-            
-            const paciente = turnos.find(t => t.nombre === nombreSel) || espera.find(e => e.nombre === nombreSel);
-            if(paciente) {
-                document.getElementById('nombre').value = paciente.nombre;
-                document.getElementById('telefono').value = paciente.telefono;
-                document.getElementById('obra-social').value = paciente.obraSocial;
-                document.getElementById('consultorio').value = paciente.consultorio;
-                document.getElementById('zona').value = paciente.zona;
-                if(paquetesPacientes[nombreSel]) {
-                    document.getElementById('total-sesiones').value = paquetesPacientes[nombreSel];
-                }
-                actualizarTests();
-            }
-        }
-
-        function cambiarTab(tab) {
-            ['seccion-agenda', 'seccion-evaluacion', 'seccion-historia', 'seccion-espera', 'seccion-caja'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
-            });
-
-            ['btn-agenda', 'btn-evaluacion', 'btn-historia', 'btn-espera', 'btn-caja'].forEach(id => {
-                const btn = document.getElementById(id);
-                if(btn) btn.className = "flex flex-col items-center text-gray-400 dark:text-gray-500";
-            });
-
-            const targetSec = document.getElementById(`seccion-${tab}`);
-            const targetBtn = document.getElementById(`btn-${tab}`);
-            if(targetSec) targetSec.classList.remove('hidden');
-            if(targetBtn) targetBtn.className = "flex flex-col items-center text-blue-600 dark:text-blue-400";
-
-            if(tab === 'agenda') renderAgenda();
-            if(tab === 'historia') actualizarSelectPacientes();
-            if(tab === 'espera') renderEspera();
-            if(tab === 'caja') renderCaja();
-            if(tab === 'evaluacion') actualizarSelectPacientes();
+        // ================= RENDERIZADO =================
+        function renderApp() {
+            renderAgenda();
+            renderPacientes();
+            renderCaja();
         }
 
         function renderAgenda() {
-            const container = document.getElementById('lista-turnos');
-            if(!container) return;
-            container.innerHTML = '';
-            
-            const { fechas } = obtenerFechasSemana(offsetSemana);
+            const container = document.getElementById('agenda-view-container');
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-            dias.forEach(dia => {
-                const fechaExactaStr = fechas[dia];
-                const turnosDia = turnos.filter(t => t.dia === dia && t.semanaOffset === offsetSemana);
-                
-                let htmlTurnos = '';
-                if(turnosDia.length === 0) {
-                    htmlTurnos = '<p class="text-xs text-gray-400 italic py-1">Sin turnos</p>';
+            if (!selectedDayFilter) {
+                // Vista Semanal General
+                let html = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-400">Vista Semanal (Hacé clic en un día para ver detalle)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                `;
+
+                dias.forEach(dia => {
+                    // Ordenar turnos de este día por horario
+                    const turnosDia = state.turnos
+                        .filter(t => t.dia === dia)
+                        .sort((a, b) => a.horario.localeCompare(b.horario));
+
+                    html += `
+                        <div onclick="selectDay('${dia}')" class="bg-cardbg border border-gray-800 rounded-xl p-4 cursor-pointer hover:border-gray-600 transition space-y-3">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-lg text-white">${dia}</h3>
+                                <span class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">${turnosDia.length} turnos</span>
+                            </div>
+                            <div class="space-y-2">
+                    `;
+
+                    if (turnosDia.length === 0) {
+                        html += `<p class="text-xs text-gray-500 italic">Sin turnos agendados</p>`;
+                    } else {
+                        turnosDia.forEach(t => {
+                            const badgeColor = t.clinica === 'Caroyita' ? 'border-caroyita text-caroyita' : 'border-axis text-axis';
+                            html += `
+                                <div class="bg-gray-900 border-l-4 ${badgeColor} p-2 rounded text-xs flex justify-between items-center">
+                                    <div>
+                                        <span class="font-bold text-white">${t.horario}</span> -${t.paciente}
+                                    </div>
+                                    <span class="text-[10px] opacity-75">${t.clinica}</span>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    html += `</div></div>`;
+                });
+
+                html += `</div>`;
+                container.innerHTML = html;
+            } else {
+                // Vista Detalle Diario (Drill-down)
+                const turnosDia = state.turnos
+                    .filter(t => t.dia === selectedDayFilter)
+                    .sort((a, b) => a.horario.localeCompare(b.horario));
+
+                let html = `
+                    <div class="flex items-center justify-between bg-cardbg p-4 rounded-xl border border-gray-800">
+                        <div class="flex items-center gap-3">
+                            <button onclick="selectedDayFilter = null; renderAgenda();" class="bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium">⬅ Volver a Semana</button>
+                            <h3 class="text-lg font-bold">Detalle de Turnos: ${selectedDayFilter}</h3>
+                        </div>
+                        <span class="text-xs text-gray-400">${turnosDia.length} turnos programados</span>
+                    </div>
+                    <div class="space-y-3">
+                `;
+
+                if (turnosDia.length === 0) {
+                    html += `<div class="bg-cardbg p-6 text-center text-gray-500 rounded-xl border border-gray-800">No hay turnos para este día.</div>`;
                 } else {
                     turnosDia.forEach(t => {
-                        const esCaroyita = t.consultorio === 'Caroyita';
-                        const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-emerald-300' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border-blue-300';
-                        const estadoActual = t.estado || 'Solicitado';
-                        
-                        let badgeEstadoColor = 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 border-yellow-300';
-                        if(estadoActual === 'Atendido') badgeEstadoColor = 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-300';
-                        if(estadoActual === 'Cancelado') badgeEstadoColor = 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-300';
-
-                        const testsStr = (t.tests && Array.isArray(t.tests)) ? t.tests.join(', ') : 'Ninguno';
-                        
-                        // Contador real basado en historial clínico
-                        const sesionesHechas = (historialClinico[t.nombre] || []).length;
-                        const totalBono = paquetesPacientes[t.nombre] || 10;
-
-                        htmlTurnos += `
-                            <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border-l-4 ${t.pagado ? 'border-green-500' : 'border-orange-400'} space-y-2 mt-2 border dark:border-gray-700">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="flex items-center space-x-1.5 mb-1 flex-wrap gap-y-1">
-                                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">${t.hora} hs</span>
-                                            <span class="text-xs font-bold px-2 py-0.5 rounded border ${badgeColor}">${t.consultorio}</span>
-                                            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">Sesión ${sesionesHechas}/${totalBono}</span>
-                                            <select onchange="cambiarEstadoTurno(${t.id}, this.value)" class="text-[11px] font-bold px-2 py-0.5 rounded border ${badgeEstadoColor} outline-none cursor-pointer bg-transparent">
-                                                <option value="Solicitado" ${estadoActual === 'Solicitado' ? 'selected' : ''}>Solicitado</option>
-                                                <option value="Atendido" ${estadoActual === 'Atendido' ? 'selected' : ''}>Atendido</option>
-                                                <option value="Cancelado" ${estadoActual === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
-                                            </select>
-                                        </div>
-                                        <h3 class="text-sm font-bold mt-1 dark:text-white">${t.nombre}</h3>
+                        const borderColor = t.clinica === 'Caroyita' ? 'border-l-caroyita' : 'border-l-axis';
+                        html += `
+                            <div class="bg-cardbg border border-gray-800 ${borderColor} border-l-4 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg font-bold text-white">${t.horario}</span>
+                                        <span class="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">${t.clinica}</span>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 block">${t.obraSocial}</span>
-                                        <span class="font-bold text-sm text-gray-700 dark:text-gray-200">$${t.monto}</span>
-                                    </div>
+                                    <p class="text-sm font-medium text-gray-200 mt-1">Paciente: ${t.paciente}</p>
                                 </div>
-                                <div class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded space-y-1">
-                                    <div class="flex justify-between">
-                                        <span><strong>Zona:</strong> ${t.zona} (${t.lateralidad})</span>
-                                        <span><strong>EVA:</strong> ${t.eva}/10</span>
-                                    </div>
-                                    <p><strong>Tests:</strong> ${testsStr}</p>
-                                    ${t.notas ? `<p class="italic text-gray-500 dark:text-gray-400"><strong>Nota:</strong> ${t.notas}</p>` : ''}
-                                </div>
-                                <div class="flex justify-between items-center pt-1 border-t dark:border-gray-700">
-                                    <div class="space-x-1">
-                                        <button onclick="togglePago(${t.id})" class="text-xs font-semibold px-2 py-1 rounded ${t.pagado ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'}">
-                                            ${t.pagado ? 'Cobrado' : 'Pendiente'}
-                                        </button>
-                                        <button onclick="eliminarTurno(${t.id})" class="text-xs text-red-500 px-1"><i class="fa-solid fa-trash"></i></button>
-                                    </div>
-                                    <button onclick="enviarRecordatorioTurno(${t.id})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 text-xs font-bold flex items-center">
-                                        <i class="fa-brands fa-whatsapp text-sm mr-1"></i> Recordatorio
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
-                container.innerHTML += `
-                    <div class="bg-gray-100 dark:bg-gray-800/60 p-3 rounded-xl shadow-inner border dark:border-gray-700">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b dark:border-gray-700 pb-1 flex justify-between">
-                            <span>${dia}</span>
-                            <span class="font-normal">${fechaExactaStr}</span>
-                        </h3>
-                        ${htmlTurnos}
-                    </div>
-                `;
-            });
-        }
-
-        function agregarPlantilla(texto) {
-            const textarea = document.getElementById('nueva-nota-sesion');
-            if(!textarea) return;
-            if(textarea.value) {
-                textarea.value += " + " + texto;
-            } else {
-                textarea.value = texto;
-            }
-        }
-
-        function mostrarHistorialPaciente() {
-            const nombreSel = document.getElementById('select-historia-paciente').value;
-            const container = document.getElementById('detalle-historia-paciente');
-            if(!container) return;
-
-            if(!nombreSel) {
-                container.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm">Selecciona un paciente para ver su bono y registrar notas rápidas.</p>';
-                return;
-            }
-
-            const sesiones = historialClinico[nombreSel] || [];
-            const totalBono = paquetesPacientes[nombreSel] || 10;
-            
-            let htmlSesiones = '';
-            if(sesiones.length === 0) {
-                htmlSesiones = '<p class="text-xs text-gray-400 italic py-2">No hay sesiones registradas todavía.</p>';
-            } else {
-                sesiones.forEach((s, idx) => {
-                    htmlSesiones += `
-                        <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border dark:border-gray-600 space-y-1">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-blue-600 dark:text-blue-400">Sesión #${idx + 1} (${s.fecha})</span>
-                                <span class="bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded font-bold">EVA: ${s.eva}/10</span>
-                            </div>
-                            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1"><strong>Zona:</strong> ${s.zona || 'N/A'} (${s.lateralidad || ''})</p>
-                            <p class="text-xs text-gray-700 dark:text-gray-200 mt-1"><strong>Evolución:</strong> ${s.nota || 'Sin observaciones'}</p>
-                        </div>
-                    `;
-                });
-            }
-
-            container.innerHTML = `
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700 space-y-3">
-                    <div class="flex justify-between items-center border-b dark:border-gray-700 pb-2">
-                        <h3 class="text-base font-bold dark:text-white"><i class="fa-solid fa-user-injured mr-2"></i>${nombreSel}</h3>
-                        <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full font-bold">Bono: ${sesiones.length} / ${totalBono} sesiones</span>
-                    </div>
-
-                    <div class="space-y-2 pt-2">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Registrar Nueva Sesión</h4>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5">Escala EVA (0-10)</label>
-                                <input type="number" id="nuevo-eva" min="0" max="10" value="3" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5">Coseguro Cobrado ($)</label>
-                                <input type="number" id="nuevo-monto" value="15000" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">Plantillas Rápidas (Tocá para agregar)</label>
-                            <div class="flex flex-wrap gap-1 mb-2">
-                                <button type="button" onclick="agregarPlantilla('Magnetoterapia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">⚡ Magneto</button>
-                                <button type="button" onclick="agregarPlantilla('Ultrasonido')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">📡 US</button>
-                                <button type="button" onclick="agregarPlantilla('Electroanalgesia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">🔌 Electros</button>
-                                <button type="button" onclick="agregarPlantilla('Terapia manual y masoterapia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">🤲 T. Manual</button>
-                                <button type="button" onclick="agregarPlantilla('Ejercicios de movilidad y fuerza')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">🏋️ Ejercicios</button>
-                                <button type="button" onclick="agregarPlantilla('Crioterapia')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-xs px-2 py-1 rounded border dark:border-gray-600">❄️ Crioterapia</button>
-                            </div>
-                            <textarea id="nueva-nota-sesion" rows="2" class="w-full border dark:border-gray-600 rounded p-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white outline-none" placeholder="Observaciones de la sesión..."></textarea>
-                        </div>
-
-                        <button onclick="guardarNuevaSesionHistorial('${nombreSel}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded shadow transition">
-                            Guardar Nota y Avanzar Bono
-                        </button>
-                    </div>
-
-                    <div class="space-y-2 pt-3 border-t dark:border-gray-700">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Historial Cronológico</h4>
-                        <div class="space-y-2 max-h-60 overflow-y-auto">
-                            ${htmlSesiones}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function guardarNuevaSesionHistorial(nombrePaciente) {
-            const eva = parseInt(document.getElementById('nuevo-eva').value) || 0;
-            const monto = parseFloat(document.getElementById('nuevo-monto').value) || 0;
-            const nota = document.getElementById('nueva-nota-sesion').value.trim();
-
-            if(!nota) {
-                alert("Por favor, escribí alguna observación de la sesión.");
-                return;
-            }
-
-            if(!historialClinico[nombrePaciente]) historialClinico[nombrePaciente] = [];
-
-            historialClinico[nombrePaciente].push({
-                fecha: new Date().toLocaleDateString('es-ES'),
-                eva,
-                nota,
-                monto
-            });
-            localStorage.setItem('kine_historial_v16', JSON.stringify(historialClinico));
-
-            const turnoRef = turnos.find(t => t.nombre === nombrePaciente);
-            turnos.push({
-                id: Date.now() + Math.random(),
-                nombre: nombrePaciente,
-                consultorio: turnoRef ? turnoRef.consultorio : 'Caroyita',
-                dia: 'Sesión Clínica',
-                semanaOffset: offsetSemana,
-                fechaCreacion: new Date().toISOString(),
-                hora: '00:00',
-                telefono: turnoRef ? turnoRef.telefono : '549',
-                obraSocial: turnoRef ? turnoRef.obraSocial : 'Particular',
-                zona: turnoRef ? turnoRef.zona : 'General',
-                lateralidad: '',
-                tests: [],
-                eva,
-                notas: nota,
-                monto,
-                pagado: true,
-                estado: 'Atendido'
-            });
-            localStorage.setItem('kine_turnos_v16', JSON.stringify(turnos));
-
-            alert("¡Sesión guardada con éxito!");
-            mostrarHistorialPaciente();
-        }
-
-        function cambiarEstadoTurno(id, nuevoEstado) {
-            turnos = turnos.map(t => t.id === id ? {...t, estado: nuevoEstado} : t);
-            localStorage.setItem('kine_turnos_v16', JSON.stringify(turnos));
-            renderAgenda();
-        }
-
-        function enviarRecordatorioTurno(id) {
-            const turnoSeleccionado = turnos.find(t => t.id === id);
-            if(!turnoSeleccionado) return;
-
-            const turnosPacienteSemana = turnos.filter(t => 
-                t.telefono === turnoSeleccionado.telefono && 
-                t.semanaOffset === offsetSemana && 
-                t.estado !== 'Cancelado'
-            );
-
-            let detalleTurnos = turnosPacienteSemana.map(t => `${t.dia} a las ${t.hora} hs`).join(', ');
-
-            const msg = `Hola ${turnoSeleccionado.nombre}, te recordamos tus turnos de kinesiología para esta semana: ${detalleTurnos}. ¡Te esperamos!`;
-            window.open(`https://wa.me/${turnoSeleccionado.telefono}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function togglePago(id) {
-            turnos = turnos.map(t => t.id === id ? {...t, pagado: !t.pagado} : t);
-            localStorage.setItem('kine_turnos_v16', JSON.stringify(turnos));
-            renderAgenda();
-        }
-
-        function eliminarTurno(id) {
-            if(confirm("¿Eliminar este turno?")) {
-                turnos = turnos.filter(t => t.id !== id);
-                localStorage.setItem('kine_turnos_v16', JSON.stringify(turnos));
-                renderAgenda();
-            }
-        }
-
-        const formTurno = document.getElementById('form-turno');
-        if(formTurno) {
-            formTurno.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const nombre = document.getElementById('nombre').value.trim();
-                const consultorio = document.getElementById('consultorio').value;
-                const hora = document.getElementById('hora').value;
-                const telefono = document.getElementById('telefono').value;
-                const obraSocial = document.getElementById('obra-social').value || "Particular";
-                const monto = parseFloat(document.getElementById('monto').value) || 0;
-                const zona = document.getElementById('zona').value;
-                const lateralidad = document.getElementById('lateralidad').value;
-                const eva = parseInt(document.getElementById('eva').value);
-                const notas = document.getElementById('notas').value;
-                const estadoTipo = document.getElementById('estado-tipo').value;
-                const totalSesiones = parseInt(document.getElementById('total-sesiones').value) || 10;
-
-                paquetesPacientes[nombre] = totalSesiones;
-                localStorage.setItem('kine_paquetes_v16', JSON.stringify(paquetesPacientes));
-
-                const testsTildados = [];
-                document.querySelectorAll('input[name="tests"]:checked').forEach(chk => testsTildados.push(chk.value));
-
-                if(!historialClinico[nombre]) historialClinico[nombre] = [];
-                // Solo agregar a la historia inicial si no hay registros previos
-                if(historialClinico[nombre].length === 0) {
-                    historialClinico[nombre].push({
-                        fecha: new Date().toLocaleDateString('es-ES'),
-                        zona, lateralidad, eva, nota: notas, tests: testsTildados, monto
-                    });
-                    localStorage.setItem('kine_historial_v16', JSON.stringify(historialClinico));
-                }
-
-                if(estadoTipo === 'espera') {
-                    espera.push({ id: Date.now(), nombre, consultorio, telefono, obraSocial, monto, zona, lateralidad, tests: testsTildados, eva, notas });
-                    localStorage.setItem('kine_espera_v16', JSON.stringify(espera));
-                    alert("Paciente guardado en Lista de Espera.");
-                    this.reset();
-                    document.getElementById('telefono').value = "549";
-                    cambiarTab('espera');
-                } else {
-                    const checkboxesDias = document.querySelectorAll('input[name="dias"]:checked');
-                    if (checkboxesDias.length === 0) {
-                        alert("Selecciona al menos un día para el turno.");
-                        return;
-                    }
-
-                    checkboxesDias.forEach(chk => {
-                        turnos.push({
-                            id: Date.now() + Math.random(),
-                            nombre, consultorio,
-                            dia: chk.value,
-                            semanaOffset: offsetSemana,
-                            fechaCreacion: new Date().toISOString(),
-                            hora, telefono, obraSocial, zona, lateralidad, tests: testsTildados, eva, notas, monto, 
-                            pagado: true,
-                            estado: 'Solicitado'
-                        });
-                    });
-
-                    localStorage.setItem('kine_turnos_v16', JSON.stringify(turnos));
-                    this.reset();
-                    document.getElementById('telefono').value = "549";
-                    const valEvaEl = document.getElementById('val-eva');
-                    if(valEvaEl) valEvaEl.innerText = "5";
-                    actualizarTests();
-                    cambiarTab('agenda');
-                }
-            });
-        }
-
-        function renderEspera() {
-            const container = document.getElementById('lista-espera-container');
-            if(!container) return;
-            container.innerHTML = '';
-
-            if(espera.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-400 py-6">No hay pacientes en lista de espera.</p>';
-                return;
-            }
-
-            espera.forEach(e => {
-                const esCaroyita = e.consultorio === 'Caroyita';
-                const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-emerald-300' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border-blue-300';
-                const testsStr = (e.tests && Array.isArray(e.tests)) ? e.tests.join(', ') : 'Ninguno';
-
-                container.innerHTML += `
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border dark:border-gray-700 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-xs font-bold px-2 py-0.5 rounded border ${badgeColor}">${e.consultorio}</span>
-                                <h3 class="text-base font-bold mt-1 dark:text-white">${e.nombre}</h3>
-                            </div>
-                            <span class="font-bold text-gray-700 dark:text-gray-200">$${e.monto}</span>
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-2 rounded space-y-1">
-                            <p><strong>Tel:</strong> ${e.telefono} | <strong>OS:</strong> ${e.obraSocial}</p>
-                            <p><strong>Zona:</strong> ${e.zona} (${e.lateralidad}) - <strong>EVA:</strong> ${e.eva}/10</p>
-                            <p><strong>Tests:</strong> ${testsStr}</p>
-                            ${e.notas ? `<p class="italic"><strong>Notas:</strong> ${e.notas}</p>` : ''}
-                        </div>
-                        <div class="flex justify-end space-x-2 pt-1">
-                            <button onclick="darTurnoDesdeEspera(${e.id})" class="bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded shadow">
-                                Dar Turno (Pasar a Agenda)
-                            </button>
-                            <button onclick="eliminarEspera(${e.id})" class="text-red-500 text-xs px-2"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function eliminarEspera(id) {
-            espera = espera.filter(e => e.id !== id);
-            localStorage.setItem('kine_espera_v16', JSON.stringify(espera));
-            renderEspera();
-        }
-
-        function darTurnoDesdeEspera(id) {
-            const paciente = espera.find(e => e.id === id);
-            if(!paciente) return;
-
-            document.getElementById('nombre').value = paciente.nombre;
-            document.getElementById('telefono').value = paciente.telefono;
-            document.getElementById('obra-social').value = paciente.obraSocial;
-            document.getElementById('consultorio').value = paciente.consultorio;
-            document.getElementById('zona').value = paciente.zona;
-            document.getElementById('monto').value = paciente.monto;
-            document.getElementById('estado-tipo').value = 'turno';
-            toggleDiasAsistencia();
-            
-            espera = espera.filter(e => e.id !== id);
-            localStorage.setItem('kine_espera_v16', JSON.stringify(espera));
-            
-            cambiarTab('evaluacion');
-            alert("Datos cargados. Selecciona los días de la semana y guarda.");
-        }
-
-        function renderCaja() {
-            const container = document.getElementById('lista-caja');
-            if(!container) return;
-            container.innerHTML = '';
-            let total = 0;
-
-            const mesFiltroInput = document.getElementById('filtro-mes');
-            const mesFiltro = mesFiltroInput ? mesFiltroInput.value : anioActual + '-' + mesActualStr;
-
-            const cobrados = turnos.filter(t => {
-                if(!t.pagado || t.estado === 'Cancelado') return false;
-                const fechaStr = t.fechaCreacion ? t.fechaCreacion.substring(0, 7) : mesFiltro;
-                return fechaStr === mesFiltro;
-            });
-
-            if(cobrados.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-400 py-4">No hay ingresos registrados en este mes.</p>';
-            }
-
-            cobrados.forEach(t => {
-                total += t.monto;
-                const esCaroyita = t.consultorio === 'Caroyita';
-                const badgeColor = esCaroyita ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
-
-                container.innerHTML += `
-                    <div class="flex justify-between items-center py-2 border-b dark:border-gray-700 last:border-0">
-                        <div>
-                            <p class="font-semibold dark:text-white">${t.nombre} <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeColor}">${t.consultorio}</span></p>
-                            <p class="text-xs text-gray-400">${t.dia} - ${t.zona} (${t.obraSocial})</p>
-                        </div>
-                        <span class="font-bold text-green-600 dark:text-green-400">+$${t.monto}</span>
-                    </div>
-                `;
-            });
-
-            const totalCajaEl = document.getElementById('total-caja');
-            if(totalCajaEl) {
-                totalCajaEl.innerText = `$${total.toLocaleString()}`;
-            }
-        }
-
-        function exportarBackup() {
-            const data = { turnos, espera, historialClinico, paquetesPacientes };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `kineapp_backup_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-        }
-
-        function importarBackup(event) {
-            const archivo = event.target.files[0];
-            if(!archivo) return;
-            const lector = new FileReader();
-            lector.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(data.turnos && data.espera) {
-                        turnos = data.turnos;
-                        espera = data.espera;
-                        historialClinico = data.historialClinico || {};
-                        paquetesPacientes = data.paquetesPacientes || {};
-                        localStorage.setItem('kine_turnos_v16', JSON.stringify(turnos));
-                        localStorage.setItem('kine_espera_v16', JSON.stringify(espera));
-                        localStorage.setItem('kine_historial_v16', JSON.stringify(historialClinico));
-                        localStorage.setItem('kine_paquetes_v16', JSON.stringify(paquetesPacientes));
-                        alert("¡Datos importados con éxito!");
-                        renderAgenda();
-                    } else {
-                        alert("El archivo no tiene el formato correcto.");
-                    }
-                } catch(err) {
-                    alert("Error al leer el archivo JSON.");
-                }
-            };
-            lector.readAsText(archivo);
-        }
-
-        renderAgenda();
-    </script>
-</body>
-</html>
+                                <div
